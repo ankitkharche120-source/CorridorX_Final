@@ -1,33 +1,24 @@
 const db = require('../db');
 const dispatchService = require('../services/dispatchService');
+const { ambulanceProvider, isLiveFleetConnected } = require('../services/ambulanceProvider');
 
 exports.getNearbyAmbulances = async (req, res) => {
   try {
     const lat = parseFloat(req.query.lat) || 18.5074;
     const lng = parseFloat(req.query.lng) || 73.8065;
     const emergencyType = req.query.emergency_type || '';
+    const radius = parseFloat(req.query.radius) || 25;
 
-    const rankedAmbulances = dispatchService.findAvailableAmbulances(lat, lng, emergencyType);
-
-    const formatted = rankedAmbulances.map(amb => {
-      let parsedEquipment = [];
-      try {
-        parsedEquipment = typeof amb.equipment_json === 'string' ? JSON.parse(amb.equipment_json) : amb.equipment_json;
-      } catch (e) {
-        parsedEquipment = ['Oxygen', 'Stretcher', 'AED'];
-      }
-
-      return {
-        ...amb,
-        equipment: parsedEquipment
-      };
-    });
+    // Use dynamic India-wide ambulance provider
+    const ambulances = await ambulanceProvider.getNearbyAmbulances(lat, lng, radius, emergencyType);
 
     return res.status(200).json({
       success: true,
-      count: formatted.length,
+      count: ambulances.length,
       userLocation: { lat, lng },
-      ambulances: formatted
+      isLiveFleetConnected,
+      fleetType: isLiveFleetConnected ? 'EXTERNAL_REAL_FLEET' : 'DEMO_DYNAMIC_FLEET',
+      ambulances
     });
   } catch (err) {
     console.error('[Ambulance Error]', err);

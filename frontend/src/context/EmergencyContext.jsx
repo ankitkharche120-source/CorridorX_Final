@@ -61,6 +61,8 @@ export const EmergencyProvider = ({ children }) => {
   // Corridor & Digital Board Dynamic States
   const [nodes, setNodes] = useState(mockRouteNodes);
   const [boards, setBoards] = useState(mockDigitalBoards);
+  const [activeWaypoints, setActiveWaypoints] = useState(mockEmergencyPathWaypoints);
+  const [calculatedRoute, setCalculatedRoute] = useState(null);
 
   // Simulation Engine State
   const [simulationIndex, setSimulationIndex] = useState(0);
@@ -80,9 +82,107 @@ export const EmergencyProvider = ({ children }) => {
   // Current GPS coordinates of ambulance (Real Stream vs Local Driver GPS vs Simulation Waypoints)
   const currentCoords = (operatingMode === 'REAL')
     ? (currentUserRole === 'AMBULANCE' 
-        ? (liveLocation.location || realStreamedCoords || mockEmergencyPathWaypoints[0])
-        : (realStreamedCoords || mockEmergencyPathWaypoints[simulationIndex] || mockEmergencyPathWaypoints[0]))
-    : (mockEmergencyPathWaypoints[simulationIndex] || mockEmergencyPathWaypoints[0]);
+        ? (liveLocation.location || realStreamedCoords || activeWaypoints[0])
+        : (realStreamedCoords || activeWaypoints[simulationIndex] || activeWaypoints[0]))
+    : (activeWaypoints[simulationIndex] || activeWaypoints[0]);
+
+  // Dynamically compute emergency corridor route and junctions anywhere in India
+  useEffect(() => {
+    const pLat = emergencyRequest.pickupCoords?.lat || 18.5175;
+    const pLng = emergencyRequest.pickupCoords?.lng || 73.8401;
+    const hLat = selectedHospital?.latitude || 18.5020;
+    const hLng = selectedHospital?.longitude || 73.8290;
+
+    const updateDynamicRouteAndNodes = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/routes/emergency-route', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            origin: { latitude: pLat, longitude: pLng },
+            destination: { latitude: hLat, longitude: hLng }
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && data.route) {
+          setCalculatedRoute(data.route);
+
+          let points = data.route.pathPoints;
+          if (!points || points.length < 2) {
+            points = [];
+            for (let i = 0; i <= 14; i++) {
+              const frac = i / 14;
+              points.push({
+                latitude: pLat + (hLat - pLat) * frac,
+                longitude: pLng + (hLng - pLng) * frac
+              });
+            }
+          }
+
+          const waypoints = points.map(p => ({ lat: p.latitude, lng: p.longitude }));
+          setActiveWaypoints(waypoints);
+
+          // Dynamically situate 4 corridor junction nodes along this route in the active Indian city
+          const step = Math.max(1, Math.floor(waypoints.length / 4));
+          const dynamicNodes = [
+            {
+              id: 'NODE-01',
+              sequence: 1,
+              name: 'Corridor Primary Entry Junction',
+              location: waypoints[Math.min(step, waypoints.length - 1)],
+              status: 'ACTIVE',
+              traffic_density: 'HEAVY (Peak Congestion)',
+              large_board_id: 'BOARD-L-01',
+              small_board_id: 'BOARD-S-01'
+            },
+            {
+              id: 'NODE-02',
+              sequence: 2,
+              name: 'Central Express Corridor Intersection',
+              location: waypoints[Math.min(step * 2, waypoints.length - 1)],
+              status: 'PREPARING',
+              traffic_density: 'CRITICAL (Bumper to Bumper)',
+              large_board_id: 'BOARD-L-02',
+              small_board_id: 'BOARD-S-02'
+            },
+            {
+              id: 'NODE-03',
+              sequence: 3,
+              name: 'Hospital Arterial Crossing',
+              location: waypoints[Math.min(step * 3, waypoints.length - 1)],
+              status: 'STANDBY',
+              traffic_density: 'MODERATE (Preempted)',
+              large_board_id: 'BOARD-L-03',
+              small_board_id: 'BOARD-S-03'
+            },
+            {
+              id: 'NODE-04',
+              sequence: 4,
+              name: `${selectedHospital?.name || 'Trauma Bay'} Emergency Gate`,
+              location: waypoints[waypoints.length - 1],
+              status: 'STANDBY',
+              traffic_density: 'CLEAR (Emergency Lane Reserved)',
+              large_board_id: 'BOARD-L-04',
+              small_board_id: 'BOARD-S-04'
+            }
+          ];
+
+          setNodes(dynamicNodes);
+        }
+      } catch (err) {
+        console.warn('Failed to calculate dynamic corridor route:', err);
+      }
+    };
+
+    updateDynamicRouteAndNodes();
+  }, [
+    emergencyRequest.pickupCoords?.lat,
+    emergencyRequest.pickupCoords?.lng,
+    selectedHospital?.latitude,
+    selectedHospital?.longitude,
+    selectedHospital?.name
+  ]);
 
   // Automatically update pickup coordinates with real GPS if in REAL mode for customer
   useEffect(() => {
@@ -184,8 +284,8 @@ export const EmergencyProvider = ({ children }) => {
   ]);
 
   // Route metrics (Simulation calculations vs Real calculations)
-  const totalWaypoints = mockEmergencyPathWaypoints.length;
-  const remainingWaypoints = totalWaypoints - 1 - simulationIndex;
+  const totalWaypoints = activeWaypoints.length;
+  const remainingWaypoints = Math.max(0, totalWaypoints - 1 - simulationIndex);
   const simDistanceKm = Math.max(0, +((remainingWaypoints * 0.23).toFixed(1)));
   const simEtaMinutes = Math.max(1, Math.ceil(simDistanceKm * 1.5));
   const simEtaSeconds = simDistanceKm === 0 ? 0 : simEtaMinutes * 60 - (simulationIndex % 4) * 12;
@@ -217,15 +317,16 @@ export const EmergencyProvider = ({ children }) => {
 
   // Synchronize Nodes and Boards based on ambulance location
   const updateCorridorStateForPosition = (currIndex) => {
-    const ambPos = mockEmergencyPathWaypoints[currIndex];
+    const ambPos = activeWaypoints[currIndex];
     if (!ambPos) return;
 
+    const total = activeWaypoints.length;
+    const step = Math.max(1, Math.floor(total / 4));
     const nodeWaypointMap = {
-      'NODE-01': 3,
-      'NODE-02': 7,
-      'NODE-03': 10,
-      'NODE-04': 12,
-      'NODE-05': 14
+      'NODE-01': step,
+      'NODE-02': step * 2,
+      'NODE-03': step * 3,
+      'NODE-04': total - 1
     };
 
     const updatedNodes = nodes.map(node => {
@@ -272,7 +373,7 @@ export const EmergencyProvider = ({ children }) => {
     if (isSimulating) {
       simulationTimerRef.current = setInterval(() => {
         setSimulationIndex(prev => {
-          if (prev < mockEmergencyPathWaypoints.length - 1) {
+          if (prev < activeWaypoints.length - 1) {
             const nextIdx = prev + 1;
             updateCorridorStateForPosition(nextIdx);
             setCurrentSpeedKmh(Math.floor(48 + Math.random() * 18));
@@ -349,11 +450,11 @@ export const EmergencyProvider = ({ children }) => {
   };
 
   const stepForwardSimulation = () => {
-    if (simulationIndex < mockEmergencyPathWaypoints.length - 1) {
+    if (simulationIndex < activeWaypoints.length - 1) {
       const nextIdx = simulationIndex + 1;
       setSimulationIndex(nextIdx);
       updateCorridorStateForPosition(nextIdx);
-      if (nextIdx === mockEmergencyPathWaypoints.length - 1) {
+      if (nextIdx === activeWaypoints.length - 1) {
         setTripStatus('ARRIVED');
         setCurrentSpeedKmh(0);
       }
@@ -390,8 +491,8 @@ export const EmergencyProvider = ({ children }) => {
   const handleArrival = () => {
     setTripStatus('ARRIVED');
     setIsSimulating(false);
-    setSimulationIndex(mockEmergencyPathWaypoints.length - 1);
-    updateCorridorStateForPosition(mockEmergencyPathWaypoints.length - 1);
+    setSimulationIndex(activeWaypoints.length - 1);
+    updateCorridorStateForPosition(activeWaypoints.length - 1);
   };
 
   const createGuestQREmergency = (guestData) => {
@@ -460,6 +561,8 @@ export const EmergencyProvider = ({ children }) => {
         startEmergencyJourney,
         handleArrival,
         createGuestQREmergency,
+        activeWaypoints,
+        calculatedRoute,
         mockAmbulances,
         mockHospitals,
         mockTrips

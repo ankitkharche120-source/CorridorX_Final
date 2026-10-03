@@ -13,6 +13,7 @@ const hospitalRoutes = require('./routes/hospitalRoutes');
 const tripRoutes = require('./routes/tripRoutes');
 const boardRoutes = require('./routes/boardRoutes');
 const routeRoutes = require('./routes/routeRoutes');
+const locationRoutes = require('./routes/locationRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +50,7 @@ app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/routes', routeRoutes);
+app.use('/api/location', locationRoutes);
 
 // Standard Production Health Check Endpoint
 app.get('/health', (req, res) => {

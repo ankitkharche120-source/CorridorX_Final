@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEmergency } from '../context/EmergencyContext';
+import { LocationPicker } from '../components/LocationPicker';
 import { 
   ShieldAlert, 
   MapPin, 
@@ -20,15 +21,22 @@ export const EmergencyRequestPage = () => {
 
   const preselectedCategory = location.state?.selectedCategory || 'Chest Pain';
 
+  const [selectedPickup, setSelectedPickup] = useState({
+    latitude: emergencyRequest.pickupCoords?.lat || 18.5175,
+    longitude: emergencyRequest.pickupCoords?.lng || 73.8401,
+    formattedAddress: emergencyRequest.pickupLocation || 'Deccan Gymkhana, Pune, Maharashtra, India',
+    shortTitle: emergencyRequest.pickupLocation?.split(',')[0] || 'Deccan Gymkhana, Pune',
+    source: 'INITIAL'
+  });
+
   const [formData, setFormData] = useState({
     patientName: emergencyRequest.patientName || 'Rahul Sharma',
     contactNumber: emergencyRequest.contactNumber || '+91 98765 43210',
     emergencyType: preselectedCategory,
-    pickupLocation: emergencyRequest.pickupLocation || 'Paud Road, Near Kothrud Stand, Pune',
+    pickupLocation: emergencyRequest.pickupLocation || 'Deccan Gymkhana, Pune, Maharashtra, India',
+    pickupCoords: emergencyRequest.pickupCoords || { lat: 18.5175, lng: 73.8401 },
     notes: emergencyRequest.notes || 'Conscious, severe acute discomfort'
   });
-
-  const [isLocating, setIsLocating] = useState(false);
 
   const emergencyTypes = [
     'Accident / Polytrauma',
@@ -41,20 +49,23 @@ export const EmergencyRequestPage = () => {
     'Other Acute Medical Condition'
   ];
 
-  const handleUseCurrentLocation = () => {
-    setIsLocating(true);
-    setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        pickupLocation: 'Current GPS: Paud Road Metro Pillar 42, Kothrud, Pune (18.5074, 73.8065)'
-      }));
-      setIsLocating(false);
-    }, 700);
+  const handleLocationChange = (loc) => {
+    setSelectedPickup(loc);
+    setFormData(prev => ({
+      ...prev,
+      pickupLocation: loc.formattedAddress,
+      pickupCoords: { lat: loc.latitude, lng: loc.longitude }
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    submitEmergencyRequest(formData);
+    submitEmergencyRequest({
+      ...formData,
+      pickupLocation: selectedPickup.formattedAddress,
+      pickupCoords: { lat: selectedPickup.latitude, lng: selectedPickup.longitude },
+      source: selectedPickup.source
+    });
     navigate('/customer/ambulances');
   };
 
@@ -168,35 +179,17 @@ export const EmergencyRequestPage = () => {
               </div>
             </div>
 
-            {/* Pickup Location with "Use Current Location" */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Pickup Location
-                </label>
-                <button
-                  type="button"
-                  onClick={handleUseCurrentLocation}
-                  disabled={isLocating}
-                  className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 font-bold transition-colors"
-                >
-                  <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-                  <span>{isLocating ? 'Fetching GPS...' : 'Use Current Location'}</span>
-                </button>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <MapPin className="w-4 h-4 text-red-400" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={formData.pickupLocation}
-                  onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
-                  placeholder="Enter address, building or landmark"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors"
-                />
-              </div>
+            {/* Location Picker (GPS, India-wide Search, Interactive Map Pin, Manual) */}
+            <div className="pt-1">
+              <LocationPicker
+                value={selectedPickup}
+                onChange={handleLocationChange}
+                onConfirm={(loc) => {
+                  handleLocationChange(loc);
+                  handleSubmit({ preventDefault: () => {} });
+                }}
+                label="Emergency Pickup Location"
+              />
             </div>
 
             {/* Additional Information */}

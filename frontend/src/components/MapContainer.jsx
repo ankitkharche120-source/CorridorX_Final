@@ -37,16 +37,18 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
     toggleOperatingMode,
     mapEngine,
     setMapEngine,
-    liveLocation
+    liveLocation,
+    activeWaypoints,
+    calculatedRoute
   } = useEmergency();
 
   const hasGKey = hasValidGoogleMapsKey();
   const apiKey = getGoogleMapsApiKey();
 
-  // Active center coordinates
+  // Active center coordinates (adapts to arbitrary Indian cities)
   const activeCenter = (operatingMode === 'REAL' && liveLocation.location) 
     ? liveLocation.location 
-    : (currentCoords || { lat: 18.5074, lng: 73.8065 });
+    : (currentCoords || emergencyRequest?.pickupCoords || { lat: 18.5175, lng: 73.8401 });
 
   // -------------------------------------------------------------
   // Leaflet Custom Icons
@@ -167,10 +169,16 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
     });
   };
 
-  // Route paths
-  const fullPathCoords = mockEmergencyPathWaypoints.map(p => [p.lat, p.lng]);
-  const completedCoords = fullPathCoords.slice(0, simulationIndex + 1);
+  // Dynamic route waypoints adapting to any Indian city
+  const waypoints = (activeWaypoints && activeWaypoints.length > 0) ? activeWaypoints : mockEmergencyPathWaypoints;
+  const fullPathCoords = waypoints.map(p => [p.lat, p.lng]);
+  const completedCoords = fullPathCoords.slice(0, Math.min(simulationIndex + 1, fullPathCoords.length));
   const remainingCoords = fullPathCoords.slice(simulationIndex);
+
+  const pickupPoint = emergencyRequest?.pickupCoords || waypoints[0];
+  const hospitalPoint = (selectedHospital?.latitude && selectedHospital?.longitude)
+    ? { lat: selectedHospital.latitude, lng: selectedHospital.longitude }
+    : waypoints[waypoints.length - 1];
 
   return (
     <div style={{ height }} className="w-full relative overflow-hidden rounded-3xl border border-slate-800 shadow-2xl bg-slate-950 flex flex-col">
@@ -272,11 +280,20 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
                 </div>
               </AdvancedMarker>
 
+              {/* Pickup Advanced Marker */}
+              {pickupPoint && (
+                <AdvancedMarker position={pickupPoint} title="Emergency Pickup Location">
+                  <Pin background="#2563eb" borderColor="#ffffff" glyphColor="#ffffff" scale={1.1}>
+                    <MapPin className="w-4 h-4 text-white" />
+                  </Pin>
+                </AdvancedMarker>
+              )}
+
               {/* Hospital Advanced Marker */}
-              {selectedHospital && (
+              {hospitalPoint && (
                 <AdvancedMarker 
-                  position={{ lat: selectedHospital.latitude || 18.5020, lng: selectedHospital.longitude || 73.8290 }}
-                  title={selectedHospital.name}
+                  position={hospitalPoint}
+                  title={selectedHospital?.name || 'Emergency Trauma Center'}
                 >
                   <Pin background="#059669" borderColor="#ffffff" glyphColor="#ffffff" scale={1.2}>
                     <Hospital className="w-4 h-4 text-white" />
@@ -358,31 +375,35 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
             )}
 
             {/* Pickup Marker */}
-            <Marker position={[mockEmergencyPathWaypoints[0].lat, mockEmergencyPathWaypoints[0].lng]} icon={pickupIcon}>
-              <Popup>
-                <div className="p-1">
-                  <p className="text-xs font-bold text-blue-400">PATIENT PICKUP</p>
-                  <p className="text-xs text-slate-200 mt-1">{emergencyRequest.pickupLocation}</p>
-                </div>
-              </Popup>
-            </Marker>
+            {pickupPoint && (
+              <Marker position={[pickupPoint.lat, pickupPoint.lng]} icon={pickupIcon}>
+                <Popup>
+                  <div className="p-1">
+                    <p className="text-xs font-bold text-blue-400">PATIENT PICKUP</p>
+                    <p className="text-xs text-slate-200 mt-1">{emergencyRequest?.pickupLocation}</p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                      {pickupPoint.lat.toFixed(5)}, {pickupPoint.lng.toFixed(5)}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
 
             {/* Hospital Destination Marker */}
-            <Marker 
-              position={[
-                mockEmergencyPathWaypoints[mockEmergencyPathWaypoints.length - 1].lat, 
-                mockEmergencyPathWaypoints[mockEmergencyPathWaypoints.length - 1].lng
-              ]} 
-              icon={hospitalIcon}
-            >
-              <Popup>
-                <div className="p-1">
-                  <p className="text-xs font-bold text-emerald-400">EMERGENCY DESTINATION</p>
-                  <p className="text-xs text-white font-semibold mt-0.5">{selectedHospital?.name}</p>
-                  <p className="text-[11px] text-slate-300">{selectedHospital?.address}</p>
-                </div>
-              </Popup>
-            </Marker>
+            {hospitalPoint && (
+              <Marker 
+                position={[hospitalPoint.lat, hospitalPoint.lng]} 
+                icon={hospitalIcon}
+              >
+                <Popup>
+                  <div className="p-1">
+                    <p className="text-xs font-bold text-emerald-400">EMERGENCY DESTINATION</p>
+                    <p className="text-xs text-white font-semibold mt-0.5">{selectedHospital?.name}</p>
+                    <p className="text-[11px] text-slate-300">{selectedHospital?.address}</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
 
             {/* Corridor Junction Nodes */}
             {nodes.map(node => (

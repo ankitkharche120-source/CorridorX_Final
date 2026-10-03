@@ -20,9 +20,40 @@ const calculateHaversine = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+// Decodes Google Polyline format into [{ latitude, longitude }]
+const decodePolyline = (str, precision = 5) => {
+  if (!str) return [];
+  let index = 0, lat = 0, lng = 0, coordinates = [];
+  let factor = Math.pow(10, precision);
+
+  while (index < str.length) {
+    let byte = null, shift = 0, result = 0;
+    do {
+      byte = str.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    const latChange = ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+    shift = 0;
+    result = 0;
+    do {
+      byte = str.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    const lngChange = ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+    lat += latChange;
+    lng += lngChange;
+    coordinates.push({ latitude: +(lat / factor).toFixed(6), longitude: +(lng / factor).toFixed(6) });
+  }
+  return coordinates;
+};
+
 exports.computeEmergencyRoute = async (req, res) => {
   try {
-    const { origin, destination, intermediates = [] } = req.body;
+    const { origin, destination, intermediates = [], alternatives = true } = req.body;
 
     if (!origin || !destination) {
       return res.status(400).json({
@@ -55,7 +86,7 @@ exports.computeEmergencyRoute = async (req, res) => {
           },
           travelMode: 'DRIVE',
           routingPreference: 'TRAFFIC_AWARE_OPTIMAL',
-          computeAlternativeRoutes: false,
+          computeAlternativeRoutes: Boolean(alternatives),
           routeModifiers: {
             avoidTolls: false,
             avoidHighways: false,
@@ -76,7 +107,7 @@ exports.computeEmergencyRoute = async (req, res) => {
           headers: {
             'Content-Type': 'application/json',
             'X-Goog-Api-Key': apiKey,
-            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs'
+            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs,routes.description'
           },
           body: JSON.stringify(bodyPayload)
         });
@@ -84,17 +115,27 @@ exports.computeEmergencyRoute = async (req, res) => {
         if (gResponse.ok) {
           const gData = await gResponse.json();
           if (gData.routes && gData.routes.length > 0) {
-            const firstRoute = gData.routes[0];
-            const durationSec = parseInt(firstRoute.duration.replace('s', ''), 10) || 300;
+            const formattedRoutes = gData.routes.map((r, idx) => {
+              const durationSec = parseInt((r.duration || '300s').replace('s', ''), 10);
+              const pathPoints = decodePolyline(r.polyline?.encodedPolyline);
+              return {
+                id: `ROUTE-${idx + 1}`,
+                isPrimary: idx === 0,
+                description: r.description || (idx === 0 ? 'Fastest Emergency Corridor (Traffic-Aware)' : `Alternative Route ${idx}`),
+                distanceMeters: r.distanceMeters,
+                distanceKm: +(r.distanceMeters / 1000).toFixed(1),
+                durationSeconds: durationSec,
+                etaMinutes: Math.max(1, Math.round(durationSec / 60)),
+                encodedPolyline: r.polyline?.encodedPolyline || null,
+                pathPoints
+              };
+            });
 
             return res.status(200).json({
               success: true,
               source: 'GOOGLE_ROUTES_API',
-              route: {
-                distanceMeters: firstRoute.distanceMeters,
-                durationSeconds: durationSec,
-                encodedPolyline: firstRoute.polyline?.encodedPolyline || null
-              }
+              route: formattedRoutes[0],
+              alternatives: formattedRoutes.slice(1)
             });
           }
         } else {
@@ -113,14 +154,37 @@ exports.computeEmergencyRoute = async (req, res) => {
     // Average urban green-wave emergency speed: 48 km/h (13.3 m/s)
     const durationSeconds = Math.max(30, Math.round(distanceMeters / 13.3));
 
+    // Generate realistic interpolated waypoints for polyline rendering
+    const pointsCount = 6;
+    const pathPoints = [];
+    for (let i = 0; i <= pointsCount; i++) {
+      const fraction = i / pointsCount;
+      // Slight urban curvature
+      const jitterLat = Math.sin(fraction * Math.PI) * 0.0012;
+      const jitterLng = Math.cos(fraction * Math.PI) * 0.0008;
+      pathPoints.push({
+        latitude: +(origin.latitude + (destination.latitude - origin.latitude) * fraction + jitterLat).toFixed(6),
+        longitude: +(origin.longitude + (destination.longitude - origin.longitude) * fraction + jitterLng).toFixed(6)
+      });
+    }
+
+    const primaryRoute = {
+      id: 'ROUTE-PRIMARY',
+      isPrimary: true,
+      description: 'CorridorX Optimal Direct Emergency Path',
+      distanceMeters,
+      distanceKm: +(distanceMeters / 1000).toFixed(1),
+      durationSeconds,
+      etaMinutes: Math.max(1, Math.round(durationSeconds / 60)),
+      encodedPolyline: null,
+      pathPoints
+    };
+
     return res.status(200).json({
       success: true,
       source: 'LOCAL_URBAN_ROUTING_ENGINE',
-      route: {
-        distanceMeters,
-        durationSeconds,
-        encodedPolyline: null
-      }
+      route: primaryRoute,
+      alternatives: []
     });
   } catch (err) {
     console.error('[Route Compute Error]', err);

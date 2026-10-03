@@ -40,63 +40,111 @@
   "ambulances": [
     {
       "id": "AMB-102",
-      "vehicle_number": "MH 12 QX 4521",
+      "vehicle_number": "IND-EMS-102",
       "driver_name": "Rajesh Shinde",
       "phone": "+91 98220 14892",
       "rating": 4.9,
       "type": "ALS (Advanced Cardiac ICU)",
       "equipment_json": "[\"Ventilator\",\"Defibrillator\",\"Multi-para Monitor\",\"Oxygen Cylinder\",\"Spine Board\"]",
-      "latitude": 18.5085,
-      "longitude": 73.818,
+      "latitude": 28.6229,
+      "longitude": 77.22,
       "address": "Near Nal Stop Flyover, Karve Road, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-102",
-      "operator_agency": "Pune Emergency Medical Services (EMS)"
+      "operator_agency": "CorridorX Dynamic Rapid Unit",
+      "equipment": [
+        "Ventilator",
+        "Defibrillator",
+        "Multi-para Monitor",
+        "Oxygen Cylinder",
+        "Spine Board"
+      ],
+      "distanceKm": 1.5,
+      "etaMinutes": 2,
+      "isDemoFleet": true,
+      "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
+      "source": "DEMO_AMBULANCE_PROVIDER",
+      "updated_at": "2026-10-03T07:14:41.847Z"
     },
     {
       "id": "AMB-205",
-      "vehicle_number": "MH 12 RN 8812",
+      "vehicle_number": "IND-EMS-205",
       "driver_name": "Amit Deshmukh",
       "phone": "+91 98901 55432",
       "rating": 4.8,
       "type": "Trauma & Neonatal Ready",
       "equipment_json": "[\"Oxygen Support\",\"Suction Machine\",\"AED\",\"Trauma Kit\"]",
-      "latitude": 18.5145,
-      "longitude": 73.834,
+      "latitude": 28.6019,
+      "longitude": 77.217,
       "address": "Deccan Gymkhana Bus Station, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-205",
-      "operator_agency": "Sanjeevani Red Cross Fleet"
+      "operator_agency": "National Red Cross Emergency Fleet",
+      "equipment": [
+        "Oxygen Support",
+        "Suction Machine",
+        "AED",
+        "Trauma Kit"
+      ],
+      "distanceKm": 1.5,
+      "etaMinutes": 2,
+      "isDemoFleet": true,
+      "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
+      "source": "DEMO_AMBULANCE_PROVIDER",
+      "updated_at": "2026-10-03T07:14:41.849Z"
     },
     {
       "id": "AMB-309",
-      "vehicle_number": "MH 14 TC 1009",
+      "vehicle_number": "IND-EMS-309",
       "driver_name": "Suresh Patil",
       "phone": "+91 97654 32109",
       "rating": 4.7,
       "type": "BLS (Basic Life Support)",
       "equipment_json": "[\"Oxygen\",\"Basic Stretcher\",\"First Aid Trauma Pack\"]",
-      "latitude": 18.498,
-      "longitude": 73.805,
+      "latitude": 28.6289,
+      "longitude": 77.195,
       "address": "Kothrud Stand, Paud Road, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-309",
-      "operator_agency": "Apex Quick Care Mobility"
+      "operator_agency": "City Emergency Mobility Link",
+      "equipment": [
+        "Oxygen",
+        "Basic Stretcher",
+        "First Aid Trauma Pack"
+      ],
+      "distanceKm": 2.2,
+      "etaMinutes": 3,
+      "isDemoFleet": true,
+      "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
+      "source": "DEMO_AMBULANCE_PROVIDER",
+      "updated_at": "2026-10-03T07:14:41.850Z"
     },
     {
       "id": "AMB-412",
-      "vehicle_number": "MH 12 AB 9988",
+      "vehicle_number": "IND-EMS-412",
       "driver_name": "Vikas Kadam",
       "phone": "+91 98234 66711",
       "rating": 5,
       "type": "Cardiac Specialist Ambulance",
       "equipment_json": "[\"ECG Telemetry\",\"Syringe Pumps\",\"Intubation Kit\",\"Ventilator\"]",
-      "latitude": 18.5204,
-      "longitude": 73.8567,
+      "latitude": 28.5959,
+      "longitude": 77.193,
       "address": "Shivajinagar Station, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-412",
-      "operator_agency": "Sahyadri Health Link"
+      "operator_agency": "Apex Trauma Network",
+      "equipment": [
+        "ECG Telemetry",
+        "Syringe Pumps",
+        "Intubation Kit",
+        "Ventilator"
+      ],
+      "distanceKm": 2.5,
+      "etaMinutes": 4,
+      "isDemoFleet": true,
+      "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
+      "source": "DEMO_AMBULANCE_PROVIDER",
+      "updated_at": "2026-10-03T07:14:41.861Z"
     }
   ],
   "hospitals": [
@@ -427,5 +475,176 @@
       "current_junction": "Nal Stop Flyover",
       "notes": "Instant passenger boarding via ambulance QR decal. WhatsApp profile linked."
     }
-  ]
+  ],
+  "customers": [],
+  "drivers": [],
+  "locations": [],
+  "corridor_nodes": [
+    {
+      "id": "NODE-01",
+      "trip_id": "TRIP-CX-8841",
+      "sequence": 1,
+      "name": "Karve Road / Kothrud Stand Junction",
+      "latitude": 18.5065,
+      "longitude": 73.8118,
+      "status": "ACTIVE",
+      "traffic_density": "HEAVY (Peak Congestion)",
+      "large_board_id": "BOARD-L-01",
+      "small_board_id": "BOARD-S-01"
+    },
+    {
+      "id": "NODE-02",
+      "trip_id": "TRIP-CX-8841",
+      "sequence": 2,
+      "name": "Nal Stop Flyover & Metro Gantry",
+      "latitude": 18.5088,
+      "longitude": 73.8208,
+      "status": "PREPARING",
+      "traffic_density": "CRITICAL (Bumper to Bumper)",
+      "large_board_id": "BOARD-L-02",
+      "small_board_id": "BOARD-S-02"
+    },
+    {
+      "id": "NODE-03",
+      "trip_id": "TRIP-CX-8841",
+      "sequence": 3,
+      "name": "Mhatre Bridge River Cross Intersection",
+      "latitude": 18.5062,
+      "longitude": 73.8258,
+      "status": "STANDBY",
+      "traffic_density": "MODERATE (Signal Phase Sync)",
+      "large_board_id": "BOARD-L-03",
+      "small_board_id": "BOARD-S-03"
+    },
+    {
+      "id": "NODE-04",
+      "trip_id": "TRIP-CX-8841",
+      "sequence": 4,
+      "name": "Erandwane DP Road Emergency Feeder",
+      "latitude": 18.5036,
+      "longitude": 73.8275,
+      "status": "STANDBY",
+      "traffic_density": "RESTRICTED (Hospital Zone)",
+      "large_board_id": "BOARD-L-04",
+      "small_board_id": "BOARD-S-04"
+    },
+    {
+      "id": "NODE-05",
+      "trip_id": "TRIP-CX-8841",
+      "sequence": 5,
+      "name": "Deenanath Mangeshkar Hospital Trauma Bay",
+      "latitude": 18.502,
+      "longitude": 73.829,
+      "status": "STANDBY",
+      "traffic_density": "PRIORITY CLEAR",
+      "large_board_id": "BOARD-L-05",
+      "small_board_id": "BOARD-S-05"
+    }
+  ],
+  "corridor_events": [],
+  "digital_boards": [
+    {
+      "id": "BOARD-L-01",
+      "node_id": "NODE-01",
+      "board_name": "Gantry Board 01 (Large)",
+      "intersection_name": "Karve Road / Kothrud Stand",
+      "type": "LARGE_INTERSECTION",
+      "status": "EMERGENCY_OVERRIDE",
+      "lane_allocation": "LANE 1 (RIGHT CORRIDOR)",
+      "latitude": 18.5065,
+      "longitude": 73.8118,
+      "current_messages": {
+        "line1": "?? CHIEF EMERGENCY ALERT",
+        "line2": "ALL EASTBOUND LANES HALTED FOR AMBULANCE 102",
+        "line3": "APPROACH SPEED 65 KM/H",
+        "arrow": "STRAIGHT_FAST"
+      }
+    },
+    {
+      "id": "BOARD-S-01",
+      "node_id": "NODE-01",
+      "board_name": "Roadside Matrix 01 (Small)",
+      "intersection_name": "Karve Road Mid-Block Marker",
+      "type": "SMALL_ROADSIDE",
+      "status": "ACTIVE",
+      "lane_allocation": "MEDIAN POST",
+      "latitude": 18.5069,
+      "longitude": 73.811,
+      "current_messages": {
+        "line1": "MOVE LEFT NOW ➔",
+        "line2": "AMBULANCE 20 SEC",
+        "arrow": "RIGHT"
+      }
+    },
+    {
+      "id": "BOARD-L-02",
+      "node_id": "NODE-02",
+      "board_name": "Gantry Board 02 (Large)",
+      "intersection_name": "Nal Stop Double Flyover Gantry",
+      "type": "LARGE_INTERSECTION",
+      "status": "PREPARING",
+      "lane_allocation": "FLYOVER LOWER BAY - LANE 2",
+      "latitude": 18.5088,
+      "longitude": 73.8208,
+      "current_messages": {
+        "line1": "⚠ AMBULANCE INCOMING VIA KARVE RD",
+        "line2": "PREPARE TO HOLD EASTBOUND SIGNAL",
+        "line3": "ARRIVAL ETA: 1 MIN 45 SEC",
+        "arrow": "STRAIGHT"
+      }
+    },
+    {
+      "id": "BOARD-S-02",
+      "node_id": "NODE-02",
+      "board_name": "Roadside Matrix 02 (Small)",
+      "intersection_name": "Nal Stop Approach Pillar",
+      "type": "SMALL_ROADSIDE",
+      "status": "PREPARING",
+      "lane_allocation": "FLYOVER PILLAR 14",
+      "latitude": 18.5082,
+      "longitude": 73.8185,
+      "current_messages": {
+        "line1": "AMBULANCE INCOMING",
+        "line2": "STAY IN LEFT LANE",
+        "arrow": "LEFT_STAY"
+      }
+    },
+    {
+      "id": "BOARD-L-03",
+      "node_id": "NODE-03",
+      "board_name": "Gantry Board 03 (Large)",
+      "intersection_name": "Mhatre Bridge Signal Crossing",
+      "type": "LARGE_INTERSECTION",
+      "status": "STANDBY",
+      "lane_allocation": "BRIDGE APPROACH - FAST LANE",
+      "latitude": 18.5062,
+      "longitude": 73.8258,
+      "current_messages": {
+        "line1": "MHATRE BRIDGE RIVER ROUTE",
+        "line2": "CORRIDORX SMART TRANSIT ACTIVE",
+        "line3": "CAUTION: WET ROADWAYS AT NIGHT",
+        "arrow": "NONE"
+      }
+    },
+    {
+      "id": "BOARD-S-03",
+      "node_id": "NODE-03",
+      "board_name": "Roadside Matrix 03 (Small)",
+      "intersection_name": "Mhatre Bridge Entry Post",
+      "type": "SMALL_ROADSIDE",
+      "status": "STANDBY",
+      "lane_allocation": "ROADSIDE BOLLARD",
+      "latitude": 18.5055,
+      "longitude": 73.8262,
+      "current_messages": {
+        "line1": "MHATRE BRIDGE",
+        "line2": "SMOOTH TRAFFIC",
+        "arrow": "NONE"
+      }
+    }
+  ],
+  "board_events": [],
+  "hospital_status": [],
+  "notifications": [],
+  "audit_logs": []
 }
