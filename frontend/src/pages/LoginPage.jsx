@@ -83,59 +83,37 @@ export const LoginPage = () => {
           </div>
         </div>
 
-        {/* Role Selection Tabs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+        {/* Two-Role Selection Bar (Customer vs Driver) */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 max-w-md mx-auto">
           <button
+            type="button"
             onClick={() => setActiveRole('CUSTOMER')}
-            className={`p-3 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
+            className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
               activeRole === 'CUSTOMER'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 ring-1 ring-red-400'
+                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <User className="w-4 h-4" />
-            <span>CUSTOMER / ATTENDANT</span>
+            <span>CUSTOMER / PATIENT</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveRole('AMBULANCE')}
-            className={`p-3 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
+            className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
               activeRole === 'AMBULANCE'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 ring-1 ring-red-400'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Truck className="w-4 h-4" />
-            <span>AMBULANCE PILOT</span>
-          </button>
-
-          <button
-            onClick={() => setActiveRole('HOSPITAL')}
-            className={`p-3 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
-              activeRole === 'HOSPITAL'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 ring-1 ring-red-400'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Hospital className="w-4 h-4" />
-            <span>HOSPITAL</span>
-          </button>
-
-          <button
-            onClick={() => setActiveRole('CONTROL_CENTER')}
-            className={`p-3 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 ${
-              activeRole === 'CONTROL_CENTER'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 ring-1 ring-red-400'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            <span>CONTROL CENTER</span>
+            <span>AMBULANCE DRIVER</span>
           </button>
         </div>
 
-        {/* Active Role Card & Instant Demo Entry */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        {/* Active Role Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl max-w-xl mx-auto space-y-6">
           
           {/* 1. Customer Portal */}
           {activeRole === 'CUSTOMER' && (
@@ -243,88 +221,7 @@ export const LoginPage = () => {
                   onClick={handleDriverLogin}
                   className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-blue-600/30 transition-transform hover:scale-[1.01]"
                 >
-                  <span>ENTER DEMO AS AMBULANCE PILOT</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 3. Hospital Portal */}
-          {activeRole === 'HOSPITAL' && (
-            <div className="space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
-                    <Hospital className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">Hospital Emergency Trauma Desk</h3>
-                    <p className="text-xs text-slate-400">Monitor incoming ambulance vitals, ETA countdown & ICU readiness</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  TRAUMA READY
-                </span>
-              </div>
-
-              <div className="text-xs space-y-3">
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Receiving Medical Center</label>
-                  <select
-                    value={hospitalUnitId}
-                    onChange={(e) => setHospitalUnitId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-red-500"
-                  >
-                    <option value="HOSP-01">Selected Emergency Receiving Hospital (Dynamic Telemetry)</option>
-                    <option value="HOSP-AIIMS">AIIMS Apex Emergency Trauma Center</option>
-                  </select>
-                </div>
-                <p className="text-slate-500 text-[11px]">
-                  Emergency bay updates dynamically to match the patient's selected hospital destination.
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  onClick={handleHospitalLogin}
-                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/30 transition-transform hover:scale-[1.01]"
-                >
-                  <span>ENTER DEMO AS HOSPITAL</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 4. Control Center Portal */}
-          {activeRole === 'CONTROL_CENTER' && (
-            <div className="space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">Central Traffic & Dispatch Control</h3>
-                    <p className="text-xs text-slate-400">Oversee active city corridors, road gantries & fleet telemetry</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                  DISPATCH CONSOLE
-                </span>
-              </div>
-
-              <p className="text-xs text-slate-300">
-                The Control Center monitors active emergencies across India and visualizes real-time green wave signal propagation without hardcoded city biases.
-              </p>
-
-              <div className="pt-2">
-                <button
-                  onClick={handleControlCenterLogin}
-                  className="w-full py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-purple-600/30 transition-transform hover:scale-[1.01]"
-                >
-                  <span>ENTER DEMO AS CONTROL CENTER</span>
+                  <span>LOGIN AS AMBULANCE DRIVER</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -335,8 +232,7 @@ export const LoginPage = () => {
 
         {/* Prototype Credibility Footer */}
         <div className="text-center text-[11px] text-slate-500 space-y-1">
-          <p>CorridorX Emergency Mobility System • Eureka Judge Demo Build</p>
-          <p className="font-mono text-slate-600">Maps: Real • Roads: Real • Route: Real • Ambulances: Location-Aware Demo</p>
+          <p>CorridorX Emergency Mobility Platform • Real GPS & Road Corridors</p>
         </div>
 
       </div>

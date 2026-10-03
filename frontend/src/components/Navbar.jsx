@@ -81,15 +81,15 @@ export const Navbar = () => {
               /* CONSUMER NAVIGATION */
               <>
                 <Link
-                  to="/customer/request"
+                  to="/customer"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    location.pathname === '/customer/request' || location.pathname === '/customer'
+                    location.pathname === '/customer' || location.pathname === '/customer/request'
                       ? 'bg-red-600/20 text-red-400 border border-red-500/30'
                       : 'text-slate-400 hover:text-white hover:bg-slate-900'
                   }`}
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>Request Ambulance</span>
+                  <span>Emergency Request</span>
                 </Link>
 
                 <Link
@@ -101,34 +101,10 @@ export const Navbar = () => {
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5 text-red-400" />
-                  <span>Live Ride Track</span>
+                  <span>Ambulance Live Track</span>
                   {isSimulating && (
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping absolute -top-0.5 -right-0.5" />
                   )}
-                </Link>
-
-                <Link
-                  to="/qr-emergency"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    location.pathname.startsWith('/qr-emergency')
-                      ? 'bg-slate-800 text-white border border-slate-700'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                  }`}
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Ambulance QR</span>
-                </Link>
-
-                <Link
-                  to="/hospital"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    location.pathname === '/hospital'
-                      ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
-                  }`}
-                >
-                  <Hospital className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Hospital Bay</span>
                 </Link>
               </>
             ) : (
@@ -192,30 +168,14 @@ export const Navbar = () => {
               </div>
             </div>
 
-            {/* Quick Portal Switcher (For judge / testing convenience) */}
-            <button
-              onClick={() => {
-                if (isDriver) {
-                  loginAsCustomer('Rahul Sharma', '+91 98765 43210');
-                  navigate('/customer/request');
-                } else {
-                  loginAsDriver('AMB-102');
-                  navigate('/ambulance');
-                }
-              }}
-              className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-bold text-slate-300 hover:text-white transition-colors"
-              title="Switch between Consumer and Ambulance views"
-            >
-              Switch to {isDriver ? 'Consumer' : 'Driver'}
-            </button>
-
-            {/* Logout Button */}
+            {/* Sign Out Button */}
             <button
               onClick={handleLogout}
-              className="p-2 rounded-lg bg-slate-900 hover:bg-red-950/50 text-slate-400 hover:text-red-400 border border-slate-800 hover:border-red-500/40 transition-colors"
-              title="Sign Out / Switch Account"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-950/50 text-slate-300 hover:text-red-400 border border-slate-800 hover:border-red-500/40 text-xs font-bold transition-all"
+              title="Sign Out to Login Page"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
             </button>
 
           </div>

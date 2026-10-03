@@ -159,96 +159,33 @@ export const CustomerDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-16">
       
-      {/* Top Banner */}
-      <div className="bg-slate-900 border-b border-slate-800 py-6 px-4 sm:px-6 lg:px-8 shadow-xl">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Clean Top Banner */}
+      <div className="bg-slate-900 border-b border-slate-800 py-4 px-4 sm:px-6 lg:px-8 shadow-xl">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
-                Pan-India Emergency Response System Online
-              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+              <h1 className="text-xl sm:text-2xl font-black text-white">
+                Emergency Ambulance Dispatch
+              </h1>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">
-              CorridorX Emergency Dispatch
-            </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
-              Real Google Maps • Real Road Network • Real Nearby Hospitals • Location-Aware Demo Fleet
+            <p className="text-slate-400 text-xs mt-0.5">
+              Live GPS • Nearest Available Ambulance • Real-Time Route & Hospital Navigation
             </p>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-              MAP: LIVE
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+              Patient: <strong className="text-white">{profileName}</strong>
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold">
-              HOSPITALS: LIVE
-            </span>
-            <span className="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30 font-bold">
-              AMBULANCE: DEMO
+            <span className="px-2.5 py-1 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 font-bold font-mono">
+              PRIORITY EMS
             </span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
-
-        {/* 1. DEMO PROFILE SECTION (Section 2 & 29) */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center">
-                <User className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Patient & Attendant Profile
-                </h3>
-                <p className="text-[11px] text-slate-400">
-                  Simulated user credentials for trial testing
-                </p>
-              </div>
-            </div>
-            <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-              DEMO PROFILE • NOT REAL PATIENT RECORDS
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div>
-              <label className="block text-slate-400 font-semibold mb-1">Patient Name</label>
-              <input
-                type="text"
-                value={profileName}
-                onChange={(e) => handleProfileUpdate('name', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium focus:outline-none focus:border-red-500"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-400 font-semibold mb-1">Contact Phone</label>
-              <input
-                type="text"
-                value={profilePhone}
-                onChange={(e) => handleProfileUpdate('phone', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium focus:outline-none focus:border-red-500"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-400 font-semibold mb-1">Emergency Condition</label>
-              <select
-                value={profileEmergencyType}
-                onChange={(e) => handleProfileUpdate('type', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-medium focus:outline-none focus:border-red-500"
-              >
-                <option value="Chest Pain / Acute Cardiac Emergency">Chest Pain / Acute Cardiac Emergency</option>
-                <option value="Road Accident / Polytrauma">Road Accident / Polytrauma</option>
-                <option value="Stroke / Paralysis Acute Alert">Stroke / Paralysis Acute Alert</option>
-                <option value="Severe Breathing Difficulty / Asthma">Severe Breathing Difficulty / Asthma</option>
-                <option value="Pediatric Emergency">Pediatric Emergency</option>
-              </select>
-            </div>
-          </div>
-        </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5 space-y-5">
 
         {/* 2. WHERE IS THE EMERGENCY? (Section 3 & 4) */}
         {!hasSelectedLocation || isChangingLocation ? (

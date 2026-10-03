@@ -46,8 +46,8 @@
       "rating": 4.9,
       "type": "ALS (Advanced Cardiac ICU)",
       "equipment_json": "[\"Ventilator\",\"Defibrillator\",\"Multi-para Monitor\",\"Oxygen Cylinder\",\"Spine Board\"]",
-      "latitude": 18.49038685811193,
-      "longitude": 73.81145749349916,
+      "latitude": 18.49935,
+      "longitude": 73.82248,
       "address": "Near Nal Stop Flyover, Karve Road, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-102",
@@ -64,7 +64,7 @@
       "isDemoFleet": true,
       "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
       "source": "DEMO_AMBULANCE_PROVIDER",
-      "updated_at": "2026-10-03T08:20:51.689Z",
+      "updated_at": "2026-10-03T09:13:54.805Z",
       "heading": null,
       "speed_kmh": 54,
       "last_telemetry_time": 1791015651687
@@ -77,8 +77,8 @@
       "rating": 4.8,
       "type": "Trauma & Neonatal Ready",
       "equipment_json": "[\"Oxygen Support\",\"Suction Machine\",\"AED\",\"Trauma Kit\"]",
-      "latitude": 18.5055,
-      "longitude": 73.8481,
+      "latitude": 18.47835,
+      "longitude": 73.81948,
       "address": "Deccan Gymkhana Bus Station, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-205",
@@ -94,7 +94,7 @@
       "isDemoFleet": true,
       "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
       "source": "DEMO_AMBULANCE_PROVIDER",
-      "updated_at": "2026-10-03T08:16:00.348Z"
+      "updated_at": "2026-10-03T09:13:54.806Z"
     },
     {
       "id": "AMB-309",
@@ -104,8 +104,8 @@
       "rating": 4.7,
       "type": "BLS (Basic Life Support)",
       "equipment_json": "[\"Oxygen\",\"Basic Stretcher\",\"First Aid Trauma Pack\"]",
-      "latitude": 18.5325,
-      "longitude": 73.8261,
+      "latitude": 18.50535,
+      "longitude": 73.79748,
       "address": "Kothrud Stand, Paud Road, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-309",
@@ -120,7 +120,7 @@
       "isDemoFleet": true,
       "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
       "source": "DEMO_AMBULANCE_PROVIDER",
-      "updated_at": "2026-10-03T08:16:00.348Z"
+      "updated_at": "2026-10-03T09:13:54.808Z"
     },
     {
       "id": "AMB-412",
@@ -130,8 +130,8 @@
       "rating": 5,
       "type": "Cardiac Specialist Ambulance",
       "equipment_json": "[\"ECG Telemetry\",\"Syringe Pumps\",\"Intubation Kit\",\"Ventilator\"]",
-      "latitude": 18.4995,
-      "longitude": 73.8241,
+      "latitude": 18.47235,
+      "longitude": 73.79548,
       "address": "Shivajinagar Station, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-412",
@@ -147,7 +147,7 @@
       "isDemoFleet": true,
       "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
       "source": "DEMO_AMBULANCE_PROVIDER",
-      "updated_at": "2026-10-03T08:16:00.349Z"
+      "updated_at": "2026-10-03T09:13:54.820Z"
     }
   ],
   "hospitals": [
