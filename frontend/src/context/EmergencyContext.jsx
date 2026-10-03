@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useLiveLocation } from '../hooks/useLiveLocation';
+import { hasValidGoogleMapsKey } from '../services/googleMapsService';
+import { socketService } from '../services/socketService';
 import { mockAmbulances } from '../data/mockAmbulances';
 import { mockHospitals } from '../data/mockHospitals';
 import { mockRouteNodes, mockEmergencyPathWaypoints } from '../data/mockRouteNodes';
@@ -8,6 +11,16 @@ import { mockTrips } from '../data/mockTrips';
 const EmergencyContext = createContext();
 
 export const EmergencyProvider = ({ children }) => {
+  // Operating Mode: 'REAL' (Live GPS, Real APIs) vs 'DEMO' (Offline Pitch Simulation)
+  const [operatingMode, setOperatingMode] = useState('REAL');
+  const [mapEngine, setMapEngine] = useState(hasValidGoogleMapsKey() ? 'google' : 'leaflet');
+
+  // Real Device GPS Hook
+  const liveLocation = useLiveLocation({
+    enabled: operatingMode === 'REAL',
+    highAccuracy: true
+  });
+
   // Authentication & Role State: 'CUSTOMER' | 'AMBULANCE'
   const [currentUserRole, setCurrentUserRole] = useState('CUSTOMER');
   const [isAuthenticated, setIsAuthenticated] = useState(true);
@@ -58,15 +71,136 @@ export const EmergencyProvider = ({ children }) => {
 
   const simulationTimerRef = useRef(null);
 
-  // Current GPS coordinates of ambulance
-  const currentCoords = mockEmergencyPathWaypoints[simulationIndex] || mockEmergencyPathWaypoints[0];
+  // Streamed coordinates received from backend Socket.IO
+  const [realStreamedCoords, setRealStreamedCoords] = useState(null);
+  const [realDistanceRemainingKm, setRealDistanceRemainingKm] = useState(null);
+  const [realEtaMinutes, setRealEtaMinutes] = useState(null);
+  const [realEtaSeconds, setRealEtaSeconds] = useState(null);
 
-  // Route metrics
+  // Current GPS coordinates of ambulance (Real Stream vs Local Driver GPS vs Simulation Waypoints)
+  const currentCoords = (operatingMode === 'REAL')
+    ? (currentUserRole === 'AMBULANCE' 
+        ? (liveLocation.location || realStreamedCoords || mockEmergencyPathWaypoints[0])
+        : (realStreamedCoords || mockEmergencyPathWaypoints[simulationIndex] || mockEmergencyPathWaypoints[0]))
+    : (mockEmergencyPathWaypoints[simulationIndex] || mockEmergencyPathWaypoints[0]);
+
+  // Automatically update pickup coordinates with real GPS if in REAL mode for customer
+  useEffect(() => {
+    if (operatingMode === 'REAL' && currentUserRole === 'CUSTOMER' && liveLocation.location) {
+      setEmergencyRequest(prev => {
+        if (prev.pickupLocation.includes('Paud Road') || prev.pickupLocation.includes('Live Device GPS')) {
+          return {
+            ...prev,
+            pickupLocation: `Live Device GPS (±${Math.round(liveLocation.accuracy || 10)}m)`,
+            pickupCoords: liveLocation.location
+          };
+        }
+        return prev;
+      });
+    }
+  }, [operatingMode, currentUserRole, liveLocation.location, liveLocation.accuracy]);
+
+  // Socket.IO Room Subscriptions & Event Handlers
+  useEffect(() => {
+    socketService.connect();
+    if (tripId) socketService.joinTrip(tripId);
+    if (selectedAmbulance?.id) socketService.joinAmbulance(selectedAmbulance.id);
+    if (selectedHospital?.id) socketService.joinHospital(selectedHospital.id);
+
+    const unsubLocation = socketService.onTripLocation((data) => {
+      if (operatingMode === 'REAL' && data.latitude && data.longitude) {
+        setRealStreamedCoords({ lat: data.latitude, lng: data.longitude });
+        if (data.speed !== undefined) setCurrentSpeedKmh(data.speed);
+      }
+    });
+
+    const unsubEta = socketService.onTripEta((data) => {
+      if (operatingMode === 'REAL') {
+        if (data.distanceKm !== undefined) setRealDistanceRemainingKm(data.distanceKm);
+        if (data.etaMinutes !== undefined) setRealEtaMinutes(data.etaMinutes);
+        if (data.etaSeconds !== undefined) setRealEtaSeconds(data.etaSeconds);
+      }
+    });
+
+    const unsubStatus = socketService.onTripStatusChanged((data) => {
+      if (data.status) setTripStatus(data.status);
+    });
+
+    const unsubCorridor = socketService.onCorridorUpdate((data) => {
+      if (data.nodes && Array.isArray(data.nodes)) {
+        setNodes(data.nodes.map(n => ({
+          ...n,
+          location: { lat: n.latitude, lng: n.longitude },
+          currentDistanceMeters: n.distanceMeters || 0
+        })));
+      }
+      if (data.boards && Array.isArray(data.boards)) {
+        setBoards(data.boards);
+      }
+    });
+
+    return () => {
+      unsubLocation();
+      unsubEta();
+      unsubStatus();
+      unsubCorridor();
+    };
+  }, [tripId, selectedAmbulance?.id, selectedHospital?.id, operatingMode]);
+
+  // Throttled Ambulance GPS Telemetry Broadcaster (For Driver in REAL MODE)
+  const lastTelemetrySentRef = useRef(0);
+  useEffect(() => {
+    if (
+      operatingMode === 'REAL' &&
+      currentUserRole === 'AMBULANCE' &&
+      driverDutyStatus === 'ONLINE' &&
+      liveLocation.location
+    ) {
+      const now = Date.now();
+      if (now - lastTelemetrySentRef.current >= 2500) {
+        lastTelemetrySentRef.current = now;
+        socketService.sendAmbulanceTelemetry({
+          ambulanceId: selectedAmbulance?.id || 'AMB-102',
+          tripId,
+          latitude: liveLocation.location.lat,
+          longitude: liveLocation.location.lng,
+          accuracy: liveLocation.accuracy,
+          heading: liveLocation.heading,
+          speed: liveLocation.speed || currentSpeedKmh,
+          timestamp: now
+        });
+      }
+    }
+  }, [
+    operatingMode,
+    currentUserRole,
+    driverDutyStatus,
+    liveLocation.location,
+    liveLocation.speed,
+    liveLocation.accuracy,
+    tripId,
+    selectedAmbulance?.id,
+    currentSpeedKmh
+  ]);
+
+  // Route metrics (Simulation calculations vs Real calculations)
   const totalWaypoints = mockEmergencyPathWaypoints.length;
   const remainingWaypoints = totalWaypoints - 1 - simulationIndex;
-  const distanceRemainingKm = Math.max(0, +( (remainingWaypoints * 0.23).toFixed(1) ));
-  const etaMinutes = Math.max(1, Math.ceil(distanceRemainingKm * 1.5));
-  const etaSeconds = distanceRemainingKm === 0 ? 0 : etaMinutes * 60 - (simulationIndex % 4) * 12;
+  const simDistanceKm = Math.max(0, +((remainingWaypoints * 0.23).toFixed(1)));
+  const simEtaMinutes = Math.max(1, Math.ceil(simDistanceKm * 1.5));
+  const simEtaSeconds = simDistanceKm === 0 ? 0 : simEtaMinutes * 60 - (simulationIndex % 4) * 12;
+
+  const distanceRemainingKm = (operatingMode === 'REAL' && realDistanceRemainingKm !== null)
+    ? realDistanceRemainingKm
+    : simDistanceKm;
+
+  const etaMinutes = (operatingMode === 'REAL' && realEtaMinutes !== null)
+    ? realEtaMinutes
+    : simEtaMinutes;
+
+  const etaSeconds = (operatingMode === 'REAL' && realEtaSeconds !== null)
+    ? realEtaSeconds
+    : simEtaSeconds;
 
   // Haversine distance calculator
   const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
@@ -284,6 +418,12 @@ export const EmergencyProvider = ({ children }) => {
         loginAsCustomer,
         loginAsDriver,
         logout,
+        operatingMode,
+        setOperatingMode,
+        toggleOperatingMode: () => setOperatingMode(prev => prev === 'REAL' ? 'DEMO' : 'REAL'),
+        mapEngine,
+        setMapEngine,
+        liveLocation,
         userName,
         userPhone,
         driverDutyStatus,

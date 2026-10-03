@@ -12,6 +12,7 @@ const ambulanceRoutes = require('./routes/ambulanceRoutes');
 const hospitalRoutes = require('./routes/hospitalRoutes');
 const tripRoutes = require('./routes/tripRoutes');
 const boardRoutes = require('./routes/boardRoutes');
+const routeRoutes = require('./routes/routeRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -47,8 +48,13 @@ app.use('/api/ambulances', ambulanceRoutes);
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/boards', boardRoutes);
+app.use('/api/routes', routeRoutes);
 
-// Health Check Endpoint
+// Standard Production Health Check Endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', uptime: process.uptime() });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ONLINE',

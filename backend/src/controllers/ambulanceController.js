@@ -1,29 +1,15 @@
 const db = require('../db');
-
-// Haversine formula to calculate distance in km
-const getDistanceKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return +(R * c).toFixed(2);
-};
+const dispatchService = require('../services/dispatchService');
 
 exports.getNearbyAmbulances = async (req, res) => {
   try {
-    const lat = parseFloat(req.query.lat) || 18.5074; // Default to Paud Road, Pune
+    const lat = parseFloat(req.query.lat) || 18.5074;
     const lng = parseFloat(req.query.lng) || 73.8065;
-    const radius = parseFloat(req.query.radius) || 15; // 15 km default search radius
+    const emergencyType = req.query.emergency_type || '';
 
-    const ambulances = db.ambulances.find();
+    const rankedAmbulances = dispatchService.findAvailableAmbulances(lat, lng, emergencyType);
 
-    const formatted = ambulances.map(amb => {
-      const distance = getDistanceKm(lat, lng, amb.latitude, amb.longitude);
-      const etaMinutes = Math.max(2, Math.round(distance * 2.2));
+    const formatted = rankedAmbulances.map(amb => {
       let parsedEquipment = [];
       try {
         parsedEquipment = typeof amb.equipment_json === 'string' ? JSON.parse(amb.equipment_json) : amb.equipment_json;
@@ -33,13 +19,9 @@ exports.getNearbyAmbulances = async (req, res) => {
 
       return {
         ...amb,
-        distanceKm: distance,
-        etaMinutes,
         equipment: parsedEquipment
       };
-    })
-    .filter(amb => amb.distanceKm <= radius)
-    .sort((a, b) => a.distanceKm - b.distanceKm);
+    });
 
     return res.status(200).json({
       success: true,
@@ -70,15 +52,24 @@ exports.updateAmbulanceStatus = async (req, res) => {
     const { status, latitude, longitude } = req.body;
     const updates = {};
     if (status) updates.status = status;
-    if (latitude !== undefined) updates.latitude = latitude;
-    if (longitude !== undefined) updates.longitude = longitude;
+    if (latitude !== undefined) updates.latitude = parseFloat(latitude);
+    if (longitude !== undefined) updates.longitude = parseFloat(longitude);
 
     const updated = db.ambulances.update(req.params.id, updates);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Ambulance not found.' });
     }
+
+    db.logAudit('AMBULANCE', req.params.id, 'STATUS_UPDATE', req.user ? req.user.id : 'DRIVER', updates);
+
+    // Realtime notification
+    const io = req.app.get('io');
+    if (io) {
+      io.to('control-center').emit('ambulance:statusUpdated', { ambulanceId: req.params.id, ...updates });
+    }
+
     return res.status(200).json({ success: true, ambulance: updated });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Server error updating status.' });
+    return res.status(500).json({ success: false, message: 'Failed to update ambulance status.' });
   }
 };

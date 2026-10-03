@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useEmergency } from '../context/EmergencyContext';
 import { 
   QrCode, 
@@ -11,20 +11,33 @@ import {
   Hospital, 
   User, 
   Phone, 
-  AlertCircle 
+  AlertCircle,
+  Truck
 } from 'lucide-react';
 
 export const QREmergencyPage = () => {
   const navigate = useNavigate();
+  const { ambulanceId } = useParams();
   const { mockHospitals, createGuestQREmergency, selectedAmbulance } = useEmergency();
 
-  const [step, setStep] = useState(1); // 1: QR Scan Simulator, 2: Quick Form, 3: Hospital & Launch
+  // If ambulanceId is passed in URL, skip directly to step 2 with that unit identified
+  const [step, setStep] = useState(ambulanceId ? 2 : 1);
+  const activeAmbulanceId = ambulanceId || selectedAmbulance?.id || 'AMB-102';
+
   const [guestData, setGuestData] = useState({
     name: 'Siddharth Patil (Guest via QR)',
     phone: '+91 98230 44556',
     injury: 'Acute Head Injury / Concussion',
-    hospitalId: mockHospitals[0].id
+    hospitalId: mockHospitals[0].id,
+    ambulanceId: activeAmbulanceId
   });
+
+  useEffect(() => {
+    if (ambulanceId) {
+      setStep(2);
+      setGuestData(prev => ({ ...prev, ambulanceId }));
+    }
+  }, [ambulanceId]);
 
   const handleSimulateScan = () => {
     setStep(2);
@@ -112,7 +125,7 @@ export const QREmergencyPage = () => {
                   TEMPORARY EMERGENCY SESSION CREATED
                 </span>
               </div>
-              <span className="text-xs font-mono text-slate-400">Linked to {selectedAmbulance?.id}</span>
+              <span className="text-xs font-mono text-slate-400">Identified Unit: <strong className="text-white">{activeAmbulanceId}</strong></span>
             </div>
 
             <form onSubmit={handleQuickSubmit} className="space-y-4">

@@ -13,6 +13,7 @@ import { AvailableAmbulancesPage } from './pages/AvailableAmbulancesPage';
 import { HospitalSelectionPage } from './pages/HospitalSelectionPage';
 import { ActiveEmergencyPage } from './pages/ActiveEmergencyPage';
 import { AmbulanceOperatorDashboard } from './pages/AmbulanceOperatorDashboard';
+import { HospitalDashboardPage } from './pages/HospitalDashboardPage';
 import { QREmergencyPage } from './pages/QREmergencyPage';
 
 export function App() {
@@ -31,7 +32,9 @@ export function App() {
               <Route path="/customer/hospitals" element={<HospitalSelectionPage />} />
               <Route path="/customer/emergency" element={<ActiveEmergencyPage />} />
               <Route path="/ambulance" element={<AmbulanceOperatorDashboard />} />
+              <Route path="/hospital" element={<HospitalDashboardPage />} />
               <Route path="/qr-emergency" element={<QREmergencyPage />} />
+              <Route path="/qr-emergency/:ambulanceId" element={<QREmergencyPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

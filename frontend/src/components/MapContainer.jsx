@@ -1,11 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { useEmergency } from '../context/EmergencyContext';
+import { 
+  getGoogleMapsApiKey, 
+  hasValidGoogleMapsKey, 
+  GMP_ATTRIBUTION_ID, 
+  tacticalDarkMapStyles 
+} from '../services/googleMapsService';
 import { mockEmergencyPathWaypoints } from '../data/mockRouteNodes';
+import { Navigation, Radio, MapPin, Hospital, Layers, AlertCircle, Compass } from 'lucide-react';
 
-// Helper component to smoothly center map on ambulance position
-const MapRecenter = ({ center }) => {
+// Leaflet recenter helper
+const LeafletRecenter = ({ center }) => {
   const map = useMap();
   useEffect(() => {
     if (center && center.lat && center.lng) {
@@ -24,10 +32,25 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
     emergencyRequest,
     isSimulating,
     currentSpeedKmh,
-    simulationIndex
+    simulationIndex,
+    operatingMode,
+    toggleOperatingMode,
+    mapEngine,
+    setMapEngine,
+    liveLocation
   } = useEmergency();
 
-  // Create Custom DivIcons so no external PNG assets fail to load
+  const hasGKey = hasValidGoogleMapsKey();
+  const apiKey = getGoogleMapsApiKey();
+
+  // Active center coordinates
+  const activeCenter = (operatingMode === 'REAL' && liveLocation.location) 
+    ? liveLocation.location 
+    : (currentCoords || { lat: 18.5074, lng: 73.8065 });
+
+  // -------------------------------------------------------------
+  // Leaflet Custom Icons
+  // -------------------------------------------------------------
   const ambulanceIcon = L.divIcon({
     className: 'custom-amb-marker',
     html: `
@@ -48,6 +71,23 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
     `,
     iconSize: [40, 40],
     iconAnchor: [20, 20]
+  });
+
+  const realGpsUserIcon = L.divIcon({
+    className: 'custom-real-gps-marker',
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -50%);">
+        <div style="position: absolute; width: 40px; height: 40px; border-radius: 9999px; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="position: relative; width: 28px; height: 28px; border-radius: 9999px; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 12px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; color: white;">
+          <div style="width: 10px; height: 10px; border-radius: 9999px; background: white;"></div>
+        </div>
+        <div style="margin-top: 4px; background: #0f172a; color: #60a5fa; border: 1px solid #3b82f6; padding: 2px 6px; border-radius: 6px; font-size: 9.5px; font-weight: 800; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.6);">
+          YOUR REAL GPS (±${Math.round(liveLocation.accuracy || 10)}m)
+        </div>
+      </div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
   });
 
   const pickupIcon = L.divIcon({
@@ -127,152 +167,288 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
     });
   };
 
-  // Build polyline coordinates
+  // Route paths
   const fullPathCoords = mockEmergencyPathWaypoints.map(p => [p.lat, p.lng]);
   const completedCoords = fullPathCoords.slice(0, simulationIndex + 1);
   const remainingCoords = fullPathCoords.slice(simulationIndex);
 
   return (
-    <div style={{ height }} className="w-full relative overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
-      <LeafletMap
-        center={[currentCoords.lat, currentCoords.lng]}
-        zoom={14}
-        scrollWheelZoom={interactive}
-        dragging={interactive}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        <MapRecenter center={currentCoords} />
-
-        {/* Full Planned Emergency Route (Muted Base) */}
-        <Polyline
-          positions={fullPathCoords}
-          pathOptions={{ color: '#334155', weight: 8, opacity: 0.7, lineCap: 'round' }}
-        />
-
-        {/* Traveled Route Segment (Solid Emerald) */}
-        {completedCoords.length > 1 && (
-          <Polyline
-            positions={completedCoords}
-            pathOptions={{ color: '#10b981', weight: 6, opacity: 0.9, lineCap: 'round' }}
-          />
-        )}
-
-        {/* Upcoming Prepared Dynamic Corridor (Glowing Red/Crimson) */}
-        {remainingCoords.length > 1 && (
-          <Polyline
-            positions={remainingCoords}
-            pathOptions={{ 
-              color: '#ef4444', 
-              weight: 6, 
-              opacity: 0.9, 
-              dashArray: '10, 8',
-              lineCap: 'round' 
-            }}
-          />
-        )}
-
-        {/* Pickup Marker */}
-        <Marker position={[mockEmergencyPathWaypoints[0].lat, mockEmergencyPathWaypoints[0].lng]} icon={pickupIcon}>
-          <Popup>
-            <div className="p-1">
-              <p className="text-xs font-bold text-blue-400">PATIENT PICKUP</p>
-              <p className="text-xs text-slate-200 mt-1">{emergencyRequest.pickupLocation}</p>
-              <p className="text-[11px] text-slate-400">Patient: {emergencyRequest.patientName}</p>
-            </div>
-          </Popup>
-        </Marker>
-
-        {/* Hospital Destination Marker */}
-        <Marker 
-          position={[
-            mockEmergencyPathWaypoints[mockEmergencyPathWaypoints.length - 1].lat, 
-            mockEmergencyPathWaypoints[mockEmergencyPathWaypoints.length - 1].lng
-          ]} 
-          icon={hospitalIcon}
-        >
-          <Popup>
-            <div className="p-1">
-              <p className="text-xs font-bold text-emerald-400">EMERGENCY DESTINATION</p>
-              <p className="text-xs text-white font-semibold mt-0.5">{selectedHospital?.name}</p>
-              <p className="text-[11px] text-slate-300">{selectedHospital?.address}</p>
-              <div className="mt-2 inline-block px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded">
-                ICU BEDS: {selectedHospital?.icuBedsAvailable || 8} OPEN
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-
-        {/* Corridor Junction Nodes */}
-        {nodes.map(node => (
-          <Marker 
-            key={node.id} 
-            position={[node.location.lat, node.location.lng]} 
-            icon={getNodeIcon(node)}
-          >
-            <Popup>
-              <div className="p-1 max-w-[200px]">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-slate-800 text-red-400 border border-slate-700">
-                    JUNCTION {node.sequence}
-                  </span>
-                  <span className={`text-[10px] font-bold ${
-                    node.status === 'ACTIVE' ? 'text-red-400' : (node.status === 'PREPARING' ? 'text-amber-400' : 'text-slate-400')
-                  }`}>
-                    {node.status}
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-white mt-1.5">{node.name}</h4>
-                <p className="text-[11px] text-slate-300 mt-1">{node.description}</p>
-                <div className="mt-2 pt-2 border-t border-slate-700 text-[10px] text-slate-400">
-                  Traffic: <strong className="text-slate-200">{node.trafficDensity}</strong>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-
-        {/* Live Moving Ambulance Marker */}
-        <Marker position={[currentCoords.lat, currentCoords.lng]} icon={ambulanceIcon} zIndexOffset={1000}>
-          <Popup>
-            <div className="p-1">
-              <div className="flex items-center gap-1.5 text-red-400 font-extrabold text-xs">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                ACTIVE AMBULANCE EN ROUTE
-              </div>
-              <p className="text-xs font-bold text-white mt-1">{selectedAmbulance?.name}</p>
-              <p className="text-[11px] text-slate-300">Reg: {selectedAmbulance?.vehicleNumber}</p>
-              <p className="text-[11px] text-slate-300">Pilot: {selectedAmbulance?.driverName}</p>
-              <div className="mt-2 flex items-center justify-between text-[11px] bg-slate-800 p-1.5 rounded border border-slate-700">
-                <span className="text-slate-400">Speed:</span>
-                <span className="font-mono font-bold text-emerald-400">{currentSpeedKmh} KM/H</span>
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-
-      </LeafletMap>
-
-      {/* Floating Map Legend (Ola/Uber Minimalist Style) */}
-      <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2.5 rounded-xl shadow-xl text-xs space-y-1.5 pointer-events-auto">
-        <div className="font-bold text-[11px] text-slate-400 tracking-wider uppercase mb-1">Corridor Signals</div>
+    <div style={{ height }} className="w-full relative overflow-hidden rounded-3xl border border-slate-800 shadow-2xl bg-slate-950 flex flex-col">
+      
+      {/* Top Telemetry & Mode Controller Strip */}
+      <div className="bg-slate-900/90 backdrop-blur-md px-4 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10 text-xs">
+        
+        {/* Operating Mode Indicator */}
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-          <span className="text-slate-200 font-medium">Junction Active (Clearing)</span>
+          {operatingMode === 'REAL' ? (
+            <button
+              onClick={toggleOperatingMode}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold hover:bg-emerald-500/30 transition-colors"
+              title="Click to switch to offline simulation mode"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>REAL MODE (LIVE GPS)</span>
+            </button>
+          ) : (
+            <button
+              onClick={toggleOperatingMode}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold hover:bg-amber-500/30 transition-colors"
+              title="Click to switch to live GPS mode"
+            >
+              <Radio className="w-3.5 h-3.5 text-amber-400" />
+              <span>DEMO MODE (PUNE CORRIDOR)</span>
+            </button>
+          )}
+
+          {liveLocation.isWatching && (
+            <span className="text-[11px] text-slate-400 hidden sm:inline font-mono">
+              GPS: ±{Math.round(liveLocation.accuracy || 0)}m • {liveLocation.accuracyQuality}
+            </span>
+          )}
         </div>
+
+        {/* Map Engine Selector */}
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-          <span className="text-slate-200 font-medium">Junction Preparing (Traffic Alert)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span className="text-slate-200 font-medium">Junction Passed (Normal)</span>
+          <div className="flex items-center bg-slate-950 rounded-xl p-0.5 border border-slate-800 text-[11px]">
+            <button
+              onClick={() => setMapEngine('google')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                mapEngine === 'google' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+              title={hasGKey ? "Google Maps Platform (Advanced Markers)" : "Google Maps Key required in .env"}
+            >
+              Google Maps {hasGKey ? '✓' : ''}
+            </button>
+            <button
+              onClick={() => setMapEngine('leaflet')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                mapEngine === 'leaflet' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              OpenStreetMap
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Main Map Canvas */}
+      <div className="flex-1 w-full h-full relative">
+        {mapEngine === 'google' && hasGKey ? (
+          /* Google Maps Platform (React @vis.gl/react-google-maps) */
+          <APIProvider apiKey={apiKey}>
+            <GoogleMap
+              style={{ width: '100%', height: '100%' }}
+              defaultCenter={activeCenter}
+              defaultZoom={14}
+              mapId="DEMO_MAP_ID"
+              internalUsageAttributionIds={[GMP_ATTRIBUTION_ID]}
+              disableDefaultUI={!interactive}
+            >
+              {/* Real Customer GPS Advanced Marker */}
+              {liveLocation.location && (
+                <AdvancedMarker position={liveLocation.location} title="Your Live Location">
+                  <div className="relative flex flex-col items-center">
+                    <div className="absolute w-10 h-10 rounded-full bg-blue-500/40 animate-ping"></div>
+                    <div className="w-7 h-7 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                    </div>
+                    <span className="mt-1 px-1.5 py-0.5 rounded bg-slate-900 text-blue-400 border border-blue-500 text-[9px] font-bold font-mono">
+                      YOU (±{Math.round(liveLocation.accuracy || 10)}m)
+                    </span>
+                  </div>
+                </AdvancedMarker>
+              )}
+
+              {/* Moving Ambulance Advanced Marker */}
+              <AdvancedMarker position={currentCoords} title={selectedAmbulance?.name}>
+                <div className="relative flex flex-col items-center">
+                  <div className="absolute w-11 h-11 rounded-full bg-red-500/35 animate-ping"></div>
+                  <div className="w-9 h-9 rounded-full bg-red-600 border-2 border-white shadow-xl flex items-center justify-center text-white">
+                    <Navigation className="w-5 h-5 fill-current" />
+                  </div>
+                  <span className="mt-1 px-1.5 py-0.5 rounded bg-slate-950 text-red-400 border border-red-500 text-[9px] font-mono font-extrabold">
+                    {selectedAmbulance?.id || 'AMB-102'} • {currentSpeedKmh} KM/H
+                  </span>
+                </div>
+              </AdvancedMarker>
+
+              {/* Hospital Advanced Marker */}
+              {selectedHospital && (
+                <AdvancedMarker 
+                  position={{ lat: selectedHospital.latitude || 18.5020, lng: selectedHospital.longitude || 73.8290 }}
+                  title={selectedHospital.name}
+                >
+                  <Pin background="#059669" borderColor="#ffffff" glyphColor="#ffffff" scale={1.2}>
+                    <Hospital className="w-4 h-4 text-white" />
+                  </Pin>
+                </AdvancedMarker>
+              )}
+
+              {/* Corridor Signal Nodes */}
+              {nodes.map(node => (
+                <AdvancedMarker 
+                  key={node.id} 
+                  position={{ lat: node.location.lat, lng: node.location.lng }}
+                  title={node.name}
+                >
+                  <div className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono border shadow-lg ${
+                    node.status === 'ACTIVE' 
+                      ? 'bg-red-600 text-white border-white animate-pulse' 
+                      : (node.status === 'PREPARING' ? 'bg-amber-500 text-slate-950 border-amber-300' : 'bg-slate-800 text-slate-400 border-slate-700')
+                  }`}>
+                    J{node.sequence}: {node.status}
+                  </div>
+                </AdvancedMarker>
+              ))}
+            </GoogleMap>
+          </APIProvider>
+        ) : (
+          /* Leaflet High-Contrast Fallback Engine */
+          <LeafletMap
+            center={[activeCenter.lat, activeCenter.lng]}
+            zoom={14}
+            scrollWheelZoom={interactive}
+            dragging={interactive}
+            style={{ height: '100%', width: '100%' }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            <LeafletRecenter center={activeCenter} />
+
+            {/* Traveled and Planned Polyline */}
+            <Polyline
+              positions={fullPathCoords}
+              pathOptions={{ color: '#334155', weight: 8, opacity: 0.7, lineCap: 'round' }}
+            />
+            {completedCoords.length > 1 && (
+              <Polyline
+                positions={completedCoords}
+                pathOptions={{ color: '#10b981', weight: 6, opacity: 0.9, lineCap: 'round' }}
+              />
+            )}
+            {remainingCoords.length > 1 && (
+              <Polyline
+                positions={remainingCoords}
+                pathOptions={{ 
+                  color: '#ef4444', 
+                  weight: 6, 
+                  opacity: 0.9, 
+                  dashArray: '10, 8',
+                  lineCap: 'round' 
+                }}
+              />
+            )}
+
+            {/* Real Customer GPS Marker */}
+            {liveLocation.location && (
+              <Marker position={[liveLocation.location.lat, liveLocation.location.lng]} icon={realGpsUserIcon}>
+                <Popup>
+                  <div className="p-1">
+                    <p className="text-xs font-bold text-blue-400">YOUR REAL DEVICE LOCATION</p>
+                    <p className="text-[11px] text-slate-300 font-mono mt-0.5">
+                      Lat: {liveLocation.location.lat.toFixed(5)}, Lng: {liveLocation.location.lng.toFixed(5)}
+                    </p>
+                    <p className="text-[10px] text-slate-400">Accuracy: ±{Math.round(liveLocation.accuracy || 10)} meters</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
+            {/* Pickup Marker */}
+            <Marker position={[mockEmergencyPathWaypoints[0].lat, mockEmergencyPathWaypoints[0].lng]} icon={pickupIcon}>
+              <Popup>
+                <div className="p-1">
+                  <p className="text-xs font-bold text-blue-400">PATIENT PICKUP</p>
+                  <p className="text-xs text-slate-200 mt-1">{emergencyRequest.pickupLocation}</p>
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* Hospital Destination Marker */}
+            <Marker 
+              position={[
+                mockEmergencyPathWaypoints[mockEmergencyPathWaypoints.length - 1].lat, 
+                mockEmergencyPathWaypoints[mockEmergencyPathWaypoints.length - 1].lng
+              ]} 
+              icon={hospitalIcon}
+            >
+              <Popup>
+                <div className="p-1">
+                  <p className="text-xs font-bold text-emerald-400">EMERGENCY DESTINATION</p>
+                  <p className="text-xs text-white font-semibold mt-0.5">{selectedHospital?.name}</p>
+                  <p className="text-[11px] text-slate-300">{selectedHospital?.address}</p>
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* Corridor Junction Nodes */}
+            {nodes.map(node => (
+              <Marker 
+                key={node.id} 
+                position={[node.location.lat, node.location.lng]} 
+                icon={getNodeIcon(node)}
+              >
+                <Popup>
+                  <div className="p-1 max-w-[200px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-slate-800 text-red-400 border border-slate-700">
+                        JUNCTION {node.sequence}
+                      </span>
+                      <span className={`text-[10px] font-bold ${
+                        node.status === 'ACTIVE' ? 'text-red-400' : (node.status === 'PREPARING' ? 'text-amber-400' : 'text-slate-400')
+                      }`}>
+                        {node.status}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-white mt-1.5">{node.name}</h4>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+            {/* Live Moving Ambulance Marker */}
+            <Marker position={[currentCoords.lat, currentCoords.lng]} icon={ambulanceIcon} zIndexOffset={1000}>
+              <Popup>
+                <div className="p-1">
+                  <div className="flex items-center gap-1.5 text-red-400 font-extrabold text-xs">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    ACTIVE AMBULANCE EN ROUTE
+                  </div>
+                  <p className="text-xs font-bold text-white mt-1">{selectedAmbulance?.name}</p>
+                  <p className="text-[11px] text-slate-300">Reg: {selectedAmbulance?.vehicleNumber}</p>
+                </div>
+              </Popup>
+            </Marker>
+          </LeafletMap>
+        )}
+
+        {/* Floating Signal Status Key */}
+        <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2.5 rounded-2xl shadow-xl text-xs space-y-1.5 pointer-events-auto">
+          <div className="font-bold text-[10px] text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between gap-2">
+            <span>Corridor Signals</span>
+            <span className="font-mono text-emerald-400">V2X SYNC</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+            <span className="text-slate-200 font-medium">Junction Active (Preempted Green)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span className="text-slate-200 font-medium">Junction Preparing (Warning Lights)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span className="text-slate-200 font-medium">Junction Passed (Normal Cycle)</span>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 };
+
+export default MapContainer;

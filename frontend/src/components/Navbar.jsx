@@ -11,7 +11,8 @@ import {
   Power,
   Radio,
   Clock,
-  Sparkles
+  Sparkles,
+  Hospital
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -109,13 +110,25 @@ export const Navbar = () => {
                 <Link
                   to="/qr-emergency"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    location.pathname === '/qr-emergency'
+                    location.pathname.startsWith('/qr-emergency')
                       ? 'bg-slate-800 text-white border border-slate-700'
                       : 'text-slate-400 hover:text-white hover:bg-slate-900'
                   }`}
                 >
                   <QrCode className="w-3.5 h-3.5" />
                   <span>Ambulance QR</span>
+                </Link>
+
+                <Link
+                  to="/hospital"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    location.pathname === '/hospital'
+                      ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  <Hospital className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Hospital Bay</span>
                 </Link>
               </>
             ) : (
