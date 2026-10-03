@@ -38,12 +38,14 @@ export const ControlCenterPage = () => {
   const isPickupPhase = tripStage === 'PICKUP_STAGE';
   const isArrivedHospital = tripStatus === 'ARRIVED_AT_HOSPITAL' || tripStatus === 'COMPLETED';
   const activeNodesCount = nodes.filter(n => n.status === 'ACTIVE' || n.status === 'PREPARING').length;
+  const currentActiveNode = nodes.find(n => n.status === 'ACTIVE');
+  const nextPreparingNode = nodes.find(n => n.status === 'PREPARING');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       
       {/* Control Center HUD Header */}
-      <div className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 lg:px-8 py-3.5 shadow-xl">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3.5 shadow-xl">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center">
@@ -54,37 +56,51 @@ export const ControlCenterPage = () => {
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold uppercase">
                   CENTRAL TRAFFIC & DISPATCH CONSOLE
                 </span>
-                <span className="text-xs text-slate-400">STATUS: <strong className="text-emerald-400">OPERATIONAL</strong></span>
+                <span className="text-xs text-slate-600">STATUS: <strong className="text-emerald-400">OPERATIONAL</strong></span>
               </div>
-              <h1 className="text-base sm:text-lg font-black text-white mt-0.5">
+              <h1 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
                 Dynamic Emergency Corridor Control Center
               </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
+            {/* Active / Preparing Junction HUD */}
+            {!isArrivedHospital && !isPickupPhase && (
+              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-500/40 text-red-300">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                <span className="text-slate-600">ACTIVE JCT:</span>
+                <span className="font-bold text-slate-900">{currentActiveNode?.id || 'SYNCHRONIZING'}</span>
+                {nextPreparingNode && (
+                  <span className="text-amber-400 text-[10px] ml-1.5 border-l border-red-800/80 pl-2">
+                    NEXT: {nextPreparingNode.id}
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
               <span className={`w-2 h-2 rounded-full ${
                 isArrivedHospital 
                   ? 'bg-emerald-500' 
                   : (isPickupPhase ? 'bg-blue-400' : 'bg-red-500 animate-ping')
               }`} />
-              <span className="text-slate-400">PHASE:</span>
-              <span className="text-white font-bold">
+              <span className="text-slate-600">PHASE:</span>
+              <span className="text-slate-900 font-bold">
                 {isArrivedHospital && 'COMPLETED'}
                 {!isArrivedHospital && isPickupPhase && (tripStatus === 'ARRIVED_AT_PICKUP' ? 'AT PICKUP' : 'DISPATCH TO PICKUP')}
                 {!isArrivedHospital && !isPickupPhase && 'HOSPITAL CORRIDOR'}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
               <Clock className="w-3.5 h-3.5 text-red-400" />
-              <span className="text-slate-400">{isPickupPhase ? 'PICKUP ETA:' : 'HOSP ETA:'}</span>
-              <span className="text-white font-bold">{isArrivedHospital ? '0 min' : `~${etaMinutes} min`}</span>
+              <span className="text-slate-600">{isPickupPhase ? 'PICKUP ETA:' : 'HOSP ETA:'}</span>
+              <span className="text-slate-900 font-bold">{isArrivedHospital ? '0 min' : `~${etaMinutes} min`}</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
               <Gauge className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-slate-400">SPEED:</span>
-              <span className="text-white font-bold">{currentSpeedKmh} KM/H</span>
+              <span className="text-slate-600">SPEED:</span>
+              <span className="text-slate-900 font-bold">{currentSpeedKmh} KM/H</span>
             </div>
           </div>
         </div>
@@ -101,7 +117,7 @@ export const ControlCenterPage = () => {
           
           {/* Map Column (8 / 12) */}
           <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="flex-1 min-h-[460px] relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+            <div className="flex-1 min-h-[460px] relative rounded-3xl overflow-hidden border border-slate-200 shadow-2xl">
               <MapContainer height="100%" interactive={true} />
             </div>
 
@@ -112,8 +128,8 @@ export const ControlCenterPage = () => {
           <div className="lg:col-span-4 flex flex-col gap-4">
             
             {/* Live Incident Status (Section 18) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                 <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
                   ACTIVE RESPONSE TELEMETRY
                 </span>
@@ -128,50 +144,50 @@ export const ControlCenterPage = () => {
 
               {/* Patient Location */}
               <div className={`p-3 rounded-2xl border text-xs space-y-1 ${
-                isPickupPhase ? 'bg-slate-950 border-blue-500/50' : 'bg-slate-950/70 border-slate-800'
+                isPickupPhase ? 'bg-slate-50 border-blue-500/50' : 'bg-slate-50 border-slate-200'
               }`}>
-                <div className="flex items-center gap-2 text-slate-400">
+                <div className="flex items-center gap-2 text-slate-600">
                   <MapPin className="w-3.5 h-3.5 text-blue-400" />
                   <span className="uppercase text-[10px] font-bold">
                     Pickup Location {isPickupPhase && '• ACTIVE DISPATCH DESTINATION'}
                   </span>
                 </div>
-                <p className="text-white font-bold truncate">
+                <p className="text-slate-900 font-bold truncate">
                   {emergencyRequest.pickupLocation}
                 </p>
-                <p className="font-mono text-[11px] text-slate-400">
-                  ETA to Pickup: <strong className="text-white">~{etaToPickup} min</strong> ({distanceToPickup} km)
+                <p className="font-mono text-[11px] text-slate-600">
+                  ETA to Pickup: <strong className="text-slate-900">~{etaToPickup} min</strong> ({distanceToPickup} km)
                 </p>
               </div>
 
               {/* Destination Hospital */}
               <div className={`p-3 rounded-2xl border text-xs space-y-1 ${
-                !isPickupPhase ? 'bg-slate-950 border-emerald-500/50' : 'bg-slate-950/70 border-slate-800'
+                !isPickupPhase ? 'bg-slate-50 border-emerald-500/50' : 'bg-slate-50 border-slate-200'
               }`}>
-                <div className="flex items-center gap-2 text-slate-400">
+                <div className="flex items-center gap-2 text-slate-600">
                   <Hospital className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="uppercase text-[10px] font-bold">
                     Receiving Medical Center {!isPickupPhase && '• ACTIVE CORRIDOR DESTINATION'}
                   </span>
                 </div>
-                <p className="text-white font-bold truncate">
+                <p className="text-slate-900 font-bold truncate">
                   {selectedHospital?.name}
                 </p>
-                <p className="text-[11px] text-slate-400">
-                  Hospital ETA: <strong className="text-white">~{etaToHospital} min</strong> ({distanceToHospital} km)
+                <p className="text-[11px] text-slate-600">
+                  Hospital ETA: <strong className="text-slate-900">~{etaToHospital} min</strong> ({distanceToHospital} km)
                 </p>
               </div>
 
               {/* Ambulance Info */}
-              <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800 text-xs space-y-1">
-                <div className="flex items-center gap-2 text-slate-400">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs space-y-1">
+                <div className="flex items-center gap-2 text-slate-600">
                   <Truck className="w-3.5 h-3.5 text-blue-400" />
                   <span className="uppercase text-[10px] font-bold">Assigned Emergency Unit</span>
                 </div>
-                <p className="text-white font-bold">
+                <p className="text-slate-900 font-bold">
                   {selectedAmbulance?.name || 'ALS Cardiac Unit 101'}
                 </p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-600">
                   Pilot: {selectedAmbulance?.driverName} • {selectedAmbulance?.vehicleNumber}
                 </p>
               </div>
@@ -180,12 +196,12 @@ export const ControlCenterPage = () => {
               <div className={`rounded-2xl p-3.5 text-xs space-y-1.5 border ${
                 isArrivedHospital
                   ? 'bg-emerald-950/30 border-emerald-500/40'
-                  : (!isPickupPhase ? 'bg-red-950/30 border-red-500/40' : 'bg-slate-950 border-slate-800')
+                  : (!isPickupPhase ? 'bg-red-950/30 border-red-500/40' : 'bg-slate-50 border-slate-200')
               }`}>
                 <div className={`flex items-center gap-2 font-mono font-bold text-[10px] uppercase ${
                   isArrivedHospital 
                     ? 'text-emerald-400' 
-                    : (!isPickupPhase ? 'text-red-400' : 'text-slate-400')
+                    : (!isPickupPhase ? 'text-red-400' : 'text-slate-600')
                 }`}>
                   {isArrivedHospital ? (
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -200,7 +216,7 @@ export const ControlCenterPage = () => {
                     {isPickupPhase && 'CORRIDOR IN STANDBY'}
                   </span>
                 </div>
-                <p className="text-slate-300 text-[11px]">
+                <p className="text-slate-700 text-[11px]">
                   {isArrivedHospital && 'Patient delivered safely to trauma bay. All traffic signals normalized.'}
                   {!isArrivedHospital && !isPickupPhase && (
                     activeNodesCount > 0 
@@ -214,7 +230,7 @@ export const ControlCenterPage = () => {
               {/* Reset Demo Button */}
               <button
                 onClick={resetDemo}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-700 transition-colors"
+                className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-300 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
                 <span>Reset Demo State</span>
@@ -232,3 +248,5 @@ export const ControlCenterPage = () => {
 };
 
 export default ControlCenterPage;
+
+

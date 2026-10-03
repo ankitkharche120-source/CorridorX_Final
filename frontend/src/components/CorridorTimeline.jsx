@@ -8,30 +8,26 @@ export const CorridorTimeline = () => {
   const isPickupPhase = tripStage === 'PICKUP_STAGE';
 
   return (
-    <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-xl">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+    <div className="bg-white  border border-slate-200 rounded-2xl p-4 shadow-xl">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-lg border ${
-            isPickupPhase 
-              ? 'bg-slate-800 text-slate-400 border-slate-700'
-              : 'bg-red-500/10 text-red-400 border-red-500/20'
-          }`}>
-            <Zap className={`w-4 h-4 ${isPickupPhase ? '' : 'animate-pulse'}`} />
+          <div className="p-1.5 rounded-lg border bg-red-500/10 text-red-400 border-red-500/20">
+            <Zap className={`w-4 h-4 ${isSimulating ? 'animate-pulse' : ''}`} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white tracking-tight">
-              {isPickupPhase ? 'Corridor Standby • Awaiting Patient Pickup' : 'Dynamic Corridor Propagation'}
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              {isPickupPhase ? 'Emergency Corridor Active • Dispatch to Patient' : 'Emergency Corridor Active • Transit to Trauma Bay'}
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-600">
               {isPickupPhase 
-                ? 'Traffic signals will engage priority green wave once patient is onboard' 
-                : 'Roadside Traffic Lights & LED Gantry Pre-emption Active'}
+                ? 'Traffic signals clearing intersections ahead of ambulance towards pickup point' 
+                : 'Roadside Traffic Lights & LED Gantry Pre-emption Active towards Hospital'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-[11px] font-mono">
-          <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            {isPickupPhase ? 'STAGE 1: PICKUP' : `${nodes.filter(n => n.status === 'PASSED').length}/${nodes.length} Cleared`}
+          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+            {isPickupPhase ? `PHASE 1: ${nodes.filter(n => n.status === 'PASSED' || n.status === 'NORMALIZED').length}/${nodes.length} Cleared` : `PHASE 2: ${nodes.filter(n => n.status === 'PASSED' || n.status === 'NORMALIZED').length}/${nodes.length} Cleared`}
           </span>
         </div>
       </div>
@@ -39,27 +35,30 @@ export const CorridorTimeline = () => {
       {/* Corridor Visual Nodes Sequence */}
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
         {nodes.map((node, index) => {
+          const isNormalized = node.status === 'NORMALIZED';
           const isPassed = node.status === 'PASSED';
           const isActive = node.status === 'ACTIVE';
           const isPreparing = node.status === 'PREPARING';
-          const isStandby = node.status === 'STANDBY';
+          const isUpcoming = node.status === 'UPCOMING' || node.status === 'STANDBY';
 
           return (
             <div
               key={node.id}
               className={`relative rounded-xl p-3 border transition-all duration-300 flex flex-col justify-between ${
                 isActive
-                  ? 'bg-red-950/40 border-red-500 shadow-lg shadow-red-500/20 ring-1 ring-red-400'
+                  ? 'bg-red-950/40 border-red-500 shadow-lg shadow-sm  '
                   : isPreparing
                   ? 'bg-amber-950/30 border-amber-500/80 shadow-md shadow-amber-500/10'
                   : isPassed
-                  ? 'bg-emerald-950/20 border-emerald-600/50 opacity-80'
-                  : 'bg-slate-950/50 border-slate-800/80 opacity-60'
+                  ? 'bg-emerald-950/30 border-emerald-500/70'
+                  : isNormalized
+                  ? 'bg-emerald-950/20 border-emerald-600/40 opacity-80'
+                  : 'bg-slate-50 border-slate-200/80 opacity-60'
               }`}
             >
               {/* Top Row: Junction number & status pill */}
               <div className="flex items-center justify-between gap-1 mb-2">
-                <span className="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700">
+                <span className="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-300">
                   J-0{node.sequence}
                 </span>
 
@@ -76,30 +75,36 @@ export const CorridorTimeline = () => {
                   </span>
                 )}
                 {isPassed && (
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                     PASSED
                   </span>
                 )}
-                {isStandby && (
+                {isNormalized && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    NORMALIZED
+                  </span>
+                )}
+                {isUpcoming && (
                   <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
-                    STANDBY
+                    UPCOMING
                   </span>
                 )}
               </div>
 
               {/* Node Title */}
               <div>
-                <h4 className="text-xs font-bold text-slate-100 line-clamp-1">
+                <h4 className="text-xs font-bold text-slate-900 line-clamp-1">
                   {node.name.split('/')[0].trim()}
                 </h4>
-                <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+                <p className="text-[10px] text-slate-600 mt-0.5 line-clamp-1">
                   {(node.type || 'TRAFFIC_SIGNAL_JUNCTION').replace(/_/g, ' ')}
                 </p>
               </div>
 
               {/* Dynamic Status Action Description */}
-              <div className="mt-2.5 pt-2 border-t border-slate-800/80 text-[10px] font-medium">
+              <div className="mt-2.5 pt-2 border-t border-slate-200/80 text-[10px] font-medium">
                 {isActive && (
                   <p className="text-red-300 font-bold flex items-center gap-1">
                     <Radio className="w-3 h-3 text-red-400 animate-spin" />
@@ -113,12 +118,18 @@ export const CorridorTimeline = () => {
                   </p>
                 )}
                 {isPassed && (
+                  <p className="text-emerald-300 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    Intersection Cleared
+                  </p>
+                )}
+                {isNormalized && (
                   <p className="text-emerald-400 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     Signals Normalized
                   </p>
                 )}
-                {isStandby && (
+                {isUpcoming && (
                   <p className="text-slate-500">
                     Awaiting Pre-trigger
                   </p>
@@ -138,3 +149,5 @@ export const CorridorTimeline = () => {
     </div>
   );
 };
+
+

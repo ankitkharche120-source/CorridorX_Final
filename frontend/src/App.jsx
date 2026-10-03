@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { EmergencyProvider } from './context/EmergencyContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { ChatbotHelper } from './components/ChatbotHelper';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -27,14 +29,8 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(currentUserRole)) {
-    // Redirect to user's assigned role home
-    if (currentUserRole === 'AMBULANCE') return <Navigate to="/ambulance" replace />;
-    if (currentUserRole === 'HOSPITAL') return <Navigate to="/hospital" replace />;
-    if (currentUserRole === 'CONTROL_CENTER') return <Navigate to="/control-center" replace />;
-    return <Navigate to="/customer" replace />;
-  }
-
+  // Removing strict role redirection so demo users can freely click between 
+  // Customer and Driver dashboards in the same tab to see the shared simulation state!
   return children;
 }
 
@@ -54,9 +50,10 @@ function RootRoute() {
 
 export function App() {
   return (
-    <EmergencyProvider>
-      <Router>
-        <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500 selection:text-white">
+    <LanguageProvider>
+      <EmergencyProvider>
+        <Router>
+          <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-red-500 selection:text-white">
           <Navbar />
           <main className="flex-grow">
             <Routes>
@@ -120,11 +117,15 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
+          <ChatbotHelper />
           <Footer />
         </div>
       </Router>
     </EmergencyProvider>
+    </LanguageProvider>
   );
 }
 
 export default App;
+
+

@@ -3,11 +3,35 @@
 @tailwind utilities;
 
 @layer base {
+  /* Fast aesthetic light theme implementation */
+  html.light-theme {
+    filter: invert(1) hue-rotate(180deg);
+  }
+  
+  /* Preserve map, images, and videos in light theme */
+  html.light-theme img,
+  html.light-theme video,
+  html.light-theme .leaflet-container {
+    filter: invert(1) hue-rotate(180deg);
+  }
+
   body {
     @apply bg-slate-950 text-slate-100 font-sans;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    top: 0 !important;
+  }
+
+  /* Hide Google Translate UI */
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  .goog-te-gadget-icon {
+    display: none !important;
+  }
+  #goog-gt-tt {
+    display: none !important;
   }
 }
 
@@ -35,7 +59,7 @@
 }
 
 .leaflet-tile {
-  filter: brightness(0.85) contrast(1.2) invert(1) hue-rotate(190deg) saturate(0.8);
+  /* removed invert filter for light theme */
 }
 
 .leaflet-popup-content-wrapper {

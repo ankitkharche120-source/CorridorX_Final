@@ -4,19 +4,23 @@ import { HeartPulse } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer className="bg-slate-950 border-t border-slate-800 text-slate-400 py-8 mt-auto">
+    <footer className="bg-slate-50 border-t border-slate-200 text-slate-600 py-8 mt-auto">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           
           {/* Brand */}
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center font-black text-white text-xs">
-              CX
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo.jpg" 
+              alt="CorridorX Logo" 
+              className="h-10 w-auto object-contain rounded-lg bg-slate-100 p-1"
+            />
+            <div className="flex flex-col">
+              <span className="font-extrabold text-slate-900 text-sm tracking-tight">
+                POWERED BY CORRIDOR<span className="text-red-500">X</span>
+              </span>
+              <span className="text-slate-500 text-[10px] uppercase tracking-wider">Dynamic Emergency Ambulance Mobility</span>
             </div>
-            <span className="font-extrabold text-white text-base tracking-tight">
-              CORRIDOR<span className="text-red-500">X</span>
-            </span>
-            <span className="text-slate-500 text-xs ml-2">Dynamic Emergency Ambulance Mobility</span>
           </div>
 
           {/* Quick Links */}
@@ -24,15 +28,20 @@ export const Footer = () => {
             <Link to="/customer/request" className="hover:text-red-400 transition-colors">Book Ambulance</Link>
             <Link to="/customer/emergency" className="hover:text-red-400 transition-colors">Live Track</Link>
             <Link to="/ambulance" className="hover:text-blue-400 transition-colors">Driver App</Link>
-            <Link to="/qr-emergency" className="hover:text-white transition-colors">QR Scan</Link>
-            <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
+            <Link to="/qr-emergency" className="hover:text-slate-900 transition-colors">QR Scan</Link>
+            <Link to="/login" className="hover:text-slate-900 transition-colors">Sign In</Link>
           </div>
 
-          {/* Attribution */}
-          <div className="text-xs text-slate-500 flex items-center gap-1">
-            <span>Built with</span>
-            <HeartPulse className="w-3.5 h-3.5 text-red-500" />
-            <span>for Emergency Healthcare</span>
+          {/* Attribution & Copyright */}
+          <div className="flex flex-col items-end gap-1">
+            <div className="text-xs text-slate-500 flex items-center gap-1">
+              <span>Built with</span>
+              <HeartPulse className="w-3.5 h-3.5 text-red-500" />
+              <span>for Emergency Healthcare</span>
+            </div>
+            <span className="text-[10px] text-slate-600 mt-1">
+              &copy; {new Date().getFullYear()} CorridorX. All rights reserved.
+            </span>
           </div>
 
         </div>
@@ -40,3 +49,5 @@ export const Footer = () => {
     </footer>
   );
 };
+
+

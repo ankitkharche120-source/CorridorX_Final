@@ -2,7 +2,6 @@ import React from 'react';
 import { useEmergency } from '../context/EmergencyContext';
 import { MapContainer } from '../components/MapContainer';
 import { CorridorTimeline } from '../components/CorridorTimeline';
-import { SimulationController } from '../components/SimulationController';
 import { OlaRideDrawer } from '../components/OlaRideDrawer';
 import { 
   ShieldAlert, 
@@ -42,10 +41,10 @@ export const ActiveEmergencyPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       
       {/* Top Emergency HUD Bar */}
-      <div className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 lg:px-8 py-3 shadow-xl">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3 shadow-xl">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           
           {/* Left: Emergency Status & Unit ID */}
@@ -68,11 +67,11 @@ export const ActiveEmergencyPage = () => {
                   {!isArrived && isPickupPhase && 'STAGE 1: AMBULANCE TO PICKUP • CORRIDOR STANDBY'}
                   {!isArrived && !isPickupPhase && 'STAGE 2: ACTIVE EMERGENCY CORRIDOR • GREEN WAVE ON'}
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-600 font-mono">
                   UNIT: {selectedAmbulance?.id || 'AMB-101'}
                 </span>
               </div>
-              <h1 className="text-base sm:text-lg font-black text-white mt-0.5">
+              <h1 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
                 {isPickupPhase 
                   ? `Target: Pickup at ${emergencyRequest.pickupLocation}` 
                   : (selectedHospital?.name || 'Deenanath Mangeshkar Hospital')}
@@ -82,18 +81,18 @@ export const ActiveEmergencyPage = () => {
 
           {/* Right: Live Telemetry Numbers */}
           <div className="flex items-center gap-3 font-mono text-xs">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
               <Clock className={`w-4 h-4 ${isPickupPhase ? 'text-blue-400' : 'text-red-400'}`} />
-              <span className="text-slate-400">
+              <span className="text-slate-600">
                 {isPickupPhase ? 'ETA TO PICKUP:' : 'ETA TO HOSP:'}
               </span>
-              <span className="text-white font-bold text-sm">{formattedEta()}</span>
+              <span className="text-slate-900 font-bold text-sm">{formattedEta()}</span>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
               <Gauge className="w-4 h-4 text-emerald-400" />
-              <span className="text-slate-400">DIST:</span>
-              <span className="text-white font-bold text-sm">
+              <span className="text-slate-600">DIST:</span>
+              <span className="text-slate-900 font-bold text-sm">
                 {isPickupPhase ? distanceToPickup : distanceToHospital} km
               </span>
             </div>
@@ -102,12 +101,12 @@ export const ActiveEmergencyPage = () => {
       </div>
 
       {/* Origin Location Sub-bar */}
-      <div className="bg-slate-950 border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 py-2 text-xs">
+      <div className="bg-slate-50 border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2 text-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-slate-300">
+          <div className="flex items-center gap-2 text-slate-700">
             <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
-            <span className="text-slate-400">Patient Location:</span>
-            <span className="font-semibold text-white">
+            <span className="text-slate-600">Patient Location:</span>
+            <span className="font-semibold text-slate-900">
               {emergencyRequest.pickupLocation || 'Karvenagar, Pune'}
             </span>
           </div>
@@ -131,12 +130,9 @@ export const ActiveEmergencyPage = () => {
           
           {/* Map Column (Occupies 8 of 12 columns on desktop) */}
           <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="flex-1 min-h-[460px] rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative">
+            <div className="flex-1 min-h-[460px] rounded-3xl overflow-hidden border border-slate-200 shadow-2xl relative">
               <MapContainer height="100%" interactive={true} />
             </div>
-
-            {/* Bottom Playback & Speed Controls */}
-            <SimulationController />
           </div>
 
           {/* Ride Details Drawer (Occupies 4 of 12 columns on desktop) */}
@@ -152,3 +148,5 @@ export const ActiveEmergencyPage = () => {
 };
 
 export default ActiveEmergencyPage;
+
+

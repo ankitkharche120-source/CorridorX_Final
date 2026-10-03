@@ -134,11 +134,11 @@ export const HospitalDashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
-        <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
               <Hospital className="w-8 h-8" />
@@ -148,12 +148,12 @@ export const HospitalDashboardPage = () => {
                 <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   TRAUMA BAY EMERGENCY PORTAL
                 </span>
-                <span className="text-xs text-slate-400 font-mono">ID: {hospitalData.id}</span>
+                <span className="text-xs text-slate-600 font-mono">ID: {hospitalData.id}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white mt-1">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
                 {hospitalData.name}
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">{hospitalData.address}</p>
+              <p className="text-xs text-slate-600 mt-0.5">{hospitalData.address}</p>
             </div>
           </div>
 
@@ -161,20 +161,26 @@ export const HospitalDashboardPage = () => {
             {statusMessage && (
               <span className="text-xs text-emerald-400 font-medium animate-pulse">{statusMessage}</span>
             )}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
               <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <span className="font-mono text-slate-300">TELEMETRY LINK ACTIVE</span>
+              <span className="font-mono text-slate-700">TELEMETRY LINK ACTIVE</span>
             </div>
           </div>
         </div>
 
         {/* Operational Status Control Grid */}
+        <div className="flex items-center justify-between pt-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">Emergency Department Capacity Controls</h2>
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            DEMO CAPACITY DATA
+          </span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           
           {/* Emergency Receiving Status */}
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2.5">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Emergency Desk</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Emergency Desk</span>
               <Activity className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="grid grid-cols-3 gap-1.5 text-xs">
@@ -184,8 +190,8 @@ export const HospitalDashboardPage = () => {
                   onClick={() => handleUpdateStatus('receivingStatus', val)}
                   className={`py-1.5 rounded-lg font-bold transition-all text-[11px] ${
                     hospitalData.receivingStatus === val
-                      ? (val === 'READY' ? 'bg-emerald-600 text-white' : (val === 'BUSY' ? 'bg-amber-600 text-white' : 'bg-red-600 text-white'))
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      ? (val === 'READY' ? 'bg-emerald-600 text-white' : (val === 'BUSY' ? 'bg-amber-600 text-slate-900' : 'bg-red-600 text-white'))
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
                   {val}
@@ -195,9 +201,9 @@ export const HospitalDashboardPage = () => {
           </div>
 
           {/* Trauma Bay Capacity */}
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2.5">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Trauma Resuscitation</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Trauma Resuscitation</span>
               <AlertTriangle className="w-4 h-4 text-red-400" />
             </div>
             <div className="grid grid-cols-3 gap-1.5 text-xs">
@@ -207,8 +213,8 @@ export const HospitalDashboardPage = () => {
                   onClick={() => handleUpdateStatus('traumaStatus', val)}
                   className={`py-1.5 rounded-lg font-bold transition-all text-[11px] ${
                     hospitalData.traumaStatus === val
-                      ? (val === 'AVAILABLE' ? 'bg-emerald-600 text-white' : (val === 'LIMITED' ? 'bg-amber-600 text-white' : 'bg-red-600 text-white'))
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      ? (val === 'AVAILABLE' ? 'bg-emerald-600 text-white' : (val === 'LIMITED' ? 'bg-amber-600 text-slate-900' : 'bg-red-600 text-white'))
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
                   {val}
@@ -218,28 +224,28 @@ export const HospitalDashboardPage = () => {
           </div>
 
           {/* ICU Open Beds */}
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2.5">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ICU Beds Ready</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">ICU Beds Ready</span>
               <Bed className="w-4 h-4 text-blue-400" />
             </div>
             <div className="flex items-center justify-between gap-2">
               <button 
                 onClick={() => handleUpdateStatus('icuBeds', Math.max(0, hospitalData.icuBeds - 1))}
-                className="w-8 h-8 rounded-lg bg-slate-950 border border-slate-800 font-bold hover:bg-slate-800"
+                className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 font-bold hover:bg-slate-100"
               >-</button>
-              <span className="text-xl font-mono font-black text-white">{hospitalData.icuBeds} BEDS</span>
+              <span className="text-xl font-mono font-black text-slate-900">{hospitalData.icuBeds} BEDS</span>
               <button 
                 onClick={() => handleUpdateStatus('icuBeds', hospitalData.icuBeds + 1)}
-                className="w-8 h-8 rounded-lg bg-slate-950 border border-slate-800 font-bold hover:bg-slate-800"
+                className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 font-bold hover:bg-slate-100"
               >+</button>
             </div>
           </div>
 
           {/* Ventilators */}
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2.5">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ventilator Support</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Ventilator Support</span>
               <Wind className="w-4 h-4 text-purple-400" />
             </div>
             <div className="grid grid-cols-3 gap-1.5 text-xs">
@@ -249,8 +255,8 @@ export const HospitalDashboardPage = () => {
                   onClick={() => handleUpdateStatus('ventilatorStatus', val)}
                   className={`py-1.5 rounded-lg font-bold transition-all text-[11px] ${
                     hospitalData.ventilatorStatus === val
-                      ? (val === 'AVAILABLE' ? 'bg-emerald-600 text-white' : (val === 'LIMITED' ? 'bg-amber-600 text-white' : 'bg-red-600 text-white'))
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      ? (val === 'AVAILABLE' ? 'bg-emerald-600 text-white' : (val === 'LIMITED' ? 'bg-amber-600 text-slate-900' : 'bg-red-600 text-white'))
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
                   {val}
@@ -262,11 +268,11 @@ export const HospitalDashboardPage = () => {
         </div>
 
         {/* Incoming Casualties Manifest */}
-        <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div className="flex items-center gap-2.5">
               <Truck className="w-5 h-5 text-red-500" />
-              <h2 className="text-base font-bold text-white uppercase tracking-wider">
+              <h2 className="text-base font-bold text-slate-900 uppercase tracking-wider">
                 Incoming Ambulances & Casualties
               </h2>
             </div>
@@ -279,7 +285,7 @@ export const HospitalDashboardPage = () => {
             {incomingTrips.map(trip => (
               <div 
                 key={trip.id}
-                className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div className="flex items-start gap-3.5">
                   <div className="w-12 h-12 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center shrink-0">
@@ -287,32 +293,32 @@ export const HospitalDashboardPage = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-white">{trip.ambulanceId}</span>
+                      <span className="text-xs font-mono font-bold text-slate-900">{trip.ambulanceId}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-red-600 text-white font-extrabold uppercase">
                         GREEN WAVE ACTIVE
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-white mt-1">
+                    <h3 className="text-sm font-bold text-slate-900 mt-1">
                       Patient: <strong className="text-emerald-300">{trip.patientName}</strong>
                     </h3>
-                    <p className="text-xs text-slate-300">
+                    <p className="text-xs text-slate-700">
                       Diagnosis: <span className="text-red-400 font-semibold">{trip.emergencyType}</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Vitals Telemetry */}
-                <div className="flex items-center gap-3 text-xs bg-slate-900 p-2.5 rounded-xl border border-slate-800 font-mono">
+                <div className="flex items-center gap-3 text-xs bg-white p-2.5 rounded-xl border border-slate-200 font-mono">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">HEART RATE</span>
+                    <span className="text-[10px] text-slate-600 block">HEART RATE</span>
                     <strong className="text-emerald-400 text-sm">{trip.vitals?.hr || 108} bpm</strong>
                   </div>
-                  <div className="border-l border-slate-800 pl-3">
-                    <span className="text-[10px] text-slate-400 block">SpO2</span>
+                  <div className="border-l border-slate-200 pl-3">
+                    <span className="text-[10px] text-slate-600 block">SpO2</span>
                     <strong className="text-blue-400 text-sm">{trip.vitals?.spo2 || 97}%</strong>
                   </div>
-                  <div className="border-l border-slate-800 pl-3">
-                    <span className="text-[10px] text-slate-400 block">BP</span>
+                  <div className="border-l border-slate-200 pl-3">
+                    <span className="text-[10px] text-slate-600 block">BP</span>
                     <strong className="text-purple-400 text-sm">{trip.vitals?.bp || '132/84'}</strong>
                   </div>
                 </div>
@@ -322,7 +328,7 @@ export const HospitalDashboardPage = () => {
                   <div className="text-2xl font-mono font-black text-red-400">
                     {trip.etaMinutes} MIN
                   </div>
-                  <span className="text-[11px] text-slate-400 font-mono">
+                  <span className="text-[11px] text-slate-600 font-mono">
                     {trip.distanceKm} km away • {trip.speedKmh} km/h
                   </span>
                   <div className="mt-1">
@@ -344,3 +350,5 @@ export const HospitalDashboardPage = () => {
 };
 
 export default HospitalDashboardPage;
+
+

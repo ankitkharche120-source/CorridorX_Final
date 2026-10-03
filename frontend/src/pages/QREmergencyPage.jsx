@@ -50,7 +50,7 @@ export const QREmergencyPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto space-y-8">
         
         {/* Header */}
@@ -59,17 +59,17 @@ export const QREmergencyPage = () => {
             <QrCode className="w-3.5 h-3.5" />
             <span>RAPID ACCESS • ZERO-APP ONBOARDING</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Emergency? <span className="text-red-500">Scan.</span> Request. <span className="text-emerald-400">Go.</span>
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-2 max-w-lg mx-auto">
+          <p className="text-slate-600 text-xs sm:text-sm mt-2 max-w-lg mx-auto">
             Inspired by Metro QR ticketing. Standing near an ambulance? Scan the vehicle's QR decal to instantly create a temporary session without tedious account registration.
           </p>
         </div>
 
         {/* Step 1: Simulated QR Code & Camera Viewfinder */}
         {step === 1 && (
-          <div className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl text-center space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl text-center space-y-6">
             
             {/* Realistic Ambulance QR Decal Preview */}
             <div className="bg-white text-slate-950 rounded-2xl p-6 max-w-xs mx-auto shadow-2xl border-4 border-slate-200 relative">
@@ -79,8 +79,8 @@ export const QREmergencyPage = () => {
               </div>
 
               {/* Graphic QR Code SVG */}
-              <div className="w-48 h-48 mx-auto bg-slate-950 p-3 rounded-xl flex items-center justify-center text-white relative">
-                <svg className="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor">
+              <div className="w-48 h-48 mx-auto bg-slate-50 p-3 rounded-xl flex items-center justify-center text-slate-900 relative">
+                <svg className="w-full h-full text-slate-900" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 2h4v4h-4v-4zm-4-4h4v2h-4v-2zm2 4h2v2h-2v-2zm-6-2h2v4h-2v-4zm4-2h2v2h-2v-2zm2 2h2v2h-2v-2z" />
                 </svg>
                 {/* Center logo badge */}
@@ -104,7 +104,7 @@ export const QREmergencyPage = () => {
               <button
                 type="button"
                 onClick={handleSimulateScan}
-                className="w-full py-4 px-6 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm shadow-xl shadow-red-600/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm shadow-xl shadow-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Simulate Scanning Ambulance QR Code</span>
@@ -116,22 +116,22 @@ export const QREmergencyPage = () => {
 
         {/* Step 2: Instant Guest Session & Hospital Selection */}
         {step === 2 && (
-          <div className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xl space-y-6">
             
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-mono font-bold text-emerald-400 uppercase">
                   TEMPORARY EMERGENCY SESSION CREATED
                 </span>
               </div>
-              <span className="text-xs font-mono text-slate-400">Identified Unit: <strong className="text-white">{activeAmbulanceId}</strong></span>
+              <span className="text-xs font-mono text-slate-600">Identified Unit: <strong className="text-slate-900">{activeAmbulanceId}</strong></span>
             </div>
 
             <form onSubmit={handleQuickSubmit} className="space-y-4">
               
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Patient / Attendant Name
                 </label>
                 <div className="relative">
@@ -143,13 +143,13 @@ export const QREmergencyPage = () => {
                     required
                     value={guestData.name}
                     onChange={(e) => setGuestData({ ...guestData, name: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl text-sm text-white"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-red-500 rounded-xl text-sm text-slate-900"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Phone (Auto-synced from WhatsApp)
                 </label>
                 <div className="relative">
@@ -161,19 +161,19 @@ export const QREmergencyPage = () => {
                     required
                     value={guestData.phone}
                     onChange={(e) => setGuestData({ ...guestData, phone: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl text-sm text-white font-mono"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-red-500 rounded-xl text-sm text-slate-900 font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Injury / Emergency Type
                 </label>
                 <select
                   value={guestData.injury}
                   onChange={(e) => setGuestData({ ...guestData, injury: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl text-sm text-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-red-500 rounded-xl text-sm text-slate-900"
                 >
                   <option value="Acute Head Injury / Concussion">Acute Head Injury / Concussion</option>
                   <option value="Road Accident (Polytrauma)">Road Accident (Polytrauma)</option>
@@ -183,13 +183,13 @@ export const QREmergencyPage = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Destination Hospital
                 </label>
                 <select
                   value={guestData.hospitalId}
                   onChange={(e) => setGuestData({ ...guestData, hospitalId: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl text-sm text-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm text-slate-900"
                 >
                   {mockHospitals.map(h => (
                     <option key={h.id} value={h.id}>
@@ -202,7 +202,7 @@ export const QREmergencyPage = () => {
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-4 px-6 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm shadow-xl shadow-red-600/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                  className="w-full py-4 px-6 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm shadow-xl shadow-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                 >
                   <span>START EMERGENCY JOURNEY & ACTIVATE CORRIDOR</span>
                   <ArrowRight className="w-4 h-4" />
@@ -218,3 +218,5 @@ export const QREmergencyPage = () => {
     </div>
   );
 };
+
+

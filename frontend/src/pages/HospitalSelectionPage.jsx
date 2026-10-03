@@ -182,11 +182,11 @@ export const HospitalSelectionPage = () => {
   const activeHospital = hospitals.find(h => h.id === chosenId) || hospitals[0];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         
         {/* Step Indicator */}
-        <div className="flex items-center justify-between mb-6 text-xs text-slate-400">
+        <div className="flex items-center justify-between mb-6 text-xs text-slate-600">
           <div className="flex items-center gap-2 text-emerald-400">
             <span className="w-5 h-5 rounded-full bg-emerald-600/30 border border-emerald-500 text-emerald-400 font-bold flex items-center justify-center text-[10px]">
               ✓
@@ -201,7 +201,7 @@ export const HospitalSelectionPage = () => {
             <span>Ambulance ({selectedAmbulance?.id || 'AMB-102'})</span>
           </div>
           <div className="h-0.5 w-12 bg-red-600" />
-          <div className="flex items-center gap-2 text-white font-bold">
+          <div className="flex items-center gap-2 text-slate-900 font-bold">
             <span className="w-5 h-5 rounded-full bg-red-600 text-white font-bold flex items-center justify-center text-[10px]">
               3
             </span>
@@ -212,30 +212,30 @@ export const HospitalSelectionPage = () => {
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-extrabold text-white">
+            <h1 className="text-2xl font-extrabold text-slate-900">
               Select Emergency Hospital
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               CorridorX links traffic signals & roadside LED boards towards the target trauma bay.
             </p>
           </div>
-          <div className="text-xs text-slate-400 font-mono">
-            Origin: <span className="text-slate-200">{pickupLat.toFixed(4)}, {pickupLng.toFixed(4)}</span>
+          <div className="text-xs text-slate-600 font-mono">
+            Origin: <span className="text-slate-800">{pickupLat.toFixed(4)}, {pickupLng.toFixed(4)}</span>
           </div>
         </div>
 
         {/* Search Bar & Radius Controls */}
-        <div className="mb-6 space-y-3 bg-slate-900/80 border border-slate-800 p-4 rounded-2xl shadow-xl">
+        <div className="mb-6 space-y-3 bg-white border border-slate-200 p-4 rounded-2xl shadow-xl">
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearchHospitals()}
                 placeholder="Search specific hospital (e.g. Kokilaben Mumbai, AIIMS Delhi, Ruby Hall, Apollo, Fortis)..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-red-500 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-red-500 rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus: focus: transition-colors"
               />
             </div>
             <button
@@ -257,7 +257,7 @@ export const HospitalSelectionPage = () => {
                   className={`px-2.5 py-1 rounded-lg font-mono font-bold text-[11px] transition-colors ${
                     radiusKm === r
                       ? 'bg-red-600 text-white shadow-sm'
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
                   {r} km
@@ -267,7 +267,7 @@ export const HospitalSelectionPage = () => {
 
             <button
               onClick={() => fetchNearbyHospitals()}
-              className="flex items-center gap-1 text-slate-400 hover:text-white text-[11px]"
+              className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-[11px]"
             >
               <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
@@ -289,25 +289,25 @@ export const HospitalSelectionPage = () => {
                     TRAFFIC-AWARE OPTIMAL
                   </span>
                 </div>
-                <h4 className="text-sm font-extrabold text-white">
+                <h4 className="text-sm font-extrabold text-slate-900">
                   Corridor to {activeHospital.name}
                 </h4>
-                <p className="text-xs text-slate-400 line-clamp-1">
+                <p className="text-xs text-slate-600 line-clamp-1">
                   From: {emergencyRequest.pickupLocation}
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 bg-slate-950/90 border border-slate-800 px-4 py-2.5 rounded-xl shrink-0">
+              <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl shrink-0">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Emergency ETA</p>
+                  <p className="text-[10px] font-bold text-slate-600 uppercase">Emergency ETA</p>
                   <p className="text-lg font-black font-mono text-red-400">
                     {isCalculatingRoute ? '...' : (routePreview?.etaMinutes || activeHospital.etaMinutes)} MIN
                   </p>
                 </div>
-                <div className="h-8 w-px bg-slate-800" />
+                <div className="h-8 w-px bg-slate-100" />
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Distance</p>
-                  <p className="text-lg font-black font-mono text-white">
+                  <p className="text-[10px] font-bold text-slate-600 uppercase">Distance</p>
+                  <p className="text-lg font-black font-mono text-slate-900">
                     {isCalculatingRoute ? '...' : (routePreview?.distanceKm || activeHospital.distanceKm)} KM
                   </p>
                 </div>
@@ -317,16 +317,16 @@ export const HospitalSelectionPage = () => {
         )}
 
         {/* Deferred Choice Banner */}
-        <div className="mb-6 bg-slate-900 border border-amber-500/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div className="mb-6 bg-white border border-amber-500/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
           <div className="flex items-start gap-3">
             <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
               <HelpCircle className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-extrabold text-white">
+              <h4 className="text-sm font-extrabold text-slate-900">
                 Not sure which hospital yet?
               </h4>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-700 mt-0.5">
                 You can board the ambulance first and let the emergency paramedics examine the patient before picking the destination.
               </p>
             </div>
@@ -341,9 +341,9 @@ export const HospitalSelectionPage = () => {
 
         {/* Hospitals List */}
         {isLoading ? (
-          <div className="py-16 text-center space-y-3 bg-slate-900/40 border border-slate-800 rounded-3xl">
+          <div className="py-16 text-center space-y-3 bg-white border border-slate-200 rounded-3xl">
             <Loader2 className="w-8 h-8 text-red-500 animate-spin mx-auto" />
-            <p className="text-sm font-bold text-slate-300">Searching emergency trauma centers across India...</p>
+            <p className="text-sm font-bold text-slate-700">Searching emergency trauma centers across India...</p>
             <p className="text-xs text-slate-500">Checking nearest emergency desks & verified trauma networks</p>
           </div>
         ) : (
@@ -357,23 +357,23 @@ export const HospitalSelectionPage = () => {
                   onClick={() => handleSelect(hosp)}
                   className={`cursor-pointer rounded-2xl p-4 sm:p-5 border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                     isSelected
-                      ? 'bg-slate-900 border-red-500 ring-2 ring-red-500/30 shadow-xl shadow-red-500/10'
-                      : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700'
+                      ? 'bg-white border-red-500   shadow-xl shadow-sm'
+                      : 'bg-white hover:bg-white border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   {/* Left: Hospital Icon & Details */}
                   <div className="flex items-start sm:items-center gap-4">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
                       isSelected 
-                        ? 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-emerald-500/30' 
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-gradient-to-br from-emerald-600 to-teal-700 text-slate-900 shadow-sm' 
+                        : 'bg-slate-100 text-slate-600'
                     }`}>
                       <Hospital className="w-7 h-7" />
                     </div>
 
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base font-extrabold text-white">
+                        <h3 className="text-base font-extrabold text-slate-900">
                           {hosp.name}
                         </h3>
 
@@ -385,18 +385,18 @@ export const HospitalSelectionPage = () => {
                         )}
                       </div>
 
-                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1 line-clamp-1">
+                      <p className="text-xs text-slate-600 mt-1 flex items-center gap-1 line-clamp-1">
                         <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
                         <span>{hosp.address}</span>
                       </p>
 
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-300">
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-700">
                         <div className="flex items-center gap-1 text-emerald-400 font-bold">
                           <Bed className="w-3.5 h-3.5" />
                           <span>Emergency Services Available</span>
                         </div>
                         <span>•</span>
-                        <div className="flex items-center gap-1 text-slate-400">
+                        <div className="flex items-center gap-1 text-slate-600">
                           <Phone className="w-3.5 h-3.5" />
                           <span>{hosp.phone}</span>
                         </div>
@@ -406,7 +406,7 @@ export const HospitalSelectionPage = () => {
                       {hosp.specialties && hosp.specialties.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {hosp.specialties.slice(0, 3).map((spec, sIdx) => (
-                            <span key={sIdx} className="text-[10px] px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">
+                            <span key={sIdx} className="text-[10px] px-2 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200">
                               {spec}
                             </span>
                           ))}
@@ -416,19 +416,19 @@ export const HospitalSelectionPage = () => {
                   </div>
 
                   {/* Right: Distance, ETA & Select Button */}
-                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800 shrink-0">
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200 shrink-0">
                     <div className="text-left sm:text-right">
                       <div className="text-base sm:text-lg font-mono font-black text-emerald-400">
                         {hosp.etaMinutes} MIN ETA
                       </div>
-                      <div className="text-xs text-slate-400 font-medium">
+                      <div className="text-xs text-slate-600 font-medium">
                         {hosp.distanceKm} km away
                       </div>
                     </div>
 
                     <div className="mt-2">
                       {isSelected ? (
-                        <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-emerald-600 text-white font-extrabold text-xs shadow-md shadow-emerald-600/30">
+                        <span className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-emerald-600 text-white font-extrabold text-xs shadow-md shadow-sm">
                           <Check className="w-3.5 h-3.5" />
                           <span>TARGETED</span>
                         </span>
@@ -436,7 +436,7 @@ export const HospitalSelectionPage = () => {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleSelect(hosp); }}
-                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-colors"
+                          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 font-bold text-xs border border-slate-300 transition-colors"
                         >
                           SELECT
                         </button>
@@ -454,14 +454,14 @@ export const HospitalSelectionPage = () => {
         <div className="mt-8 pt-4 border-t border-slate-900 flex items-center justify-between">
           <button
             onClick={() => navigate('/customer/ambulances')}
-            className="text-xs text-slate-400 hover:text-white font-semibold transition-colors"
+            className="text-xs text-slate-600 hover:text-slate-900 font-semibold transition-colors"
           >
             ← Back to Ambulances
           </button>
 
           <button
             onClick={handleConfirmHospital}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm shadow-xl shadow-red-600/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm shadow-xl shadow-sm transition-all hover:scale-105 active:scale-95"
           >
             <span>Activate Corridor & Dispatch</span>
             <ArrowRight className="w-4 h-4" />
@@ -474,3 +474,5 @@ export const HospitalSelectionPage = () => {
 };
 
 export default HospitalSelectionPage;
+
+

@@ -11,7 +11,7 @@ export const DigitalBoardCard = ({ board }) => {
     switch (status) {
       case 'ACTIVE':
         return {
-          border: 'border-red-500 ring-2 ring-red-500/50',
+          border: 'border-red-500  ',
           ledColor: 'text-red-500 led-red',
           badgeBg: 'bg-red-600 text-white',
           beacon: 'bg-red-500 animate-ping',
@@ -19,7 +19,7 @@ export const DigitalBoardCard = ({ board }) => {
         };
       case 'PREPARING':
         return {
-          border: 'border-amber-500/80 ring-1 ring-amber-500/40',
+          border: 'border-amber-500/80  ring-amber-500/40',
           ledColor: 'text-amber-400 led-amber',
           badgeBg: 'bg-amber-600 text-slate-950 font-black',
           beacon: 'bg-amber-400 animate-pulse',
@@ -35,9 +35,9 @@ export const DigitalBoardCard = ({ board }) => {
         };
       default:
         return {
-          border: 'border-slate-800',
+          border: 'border-slate-200',
           ledColor: 'text-amber-200/80',
-          badgeBg: 'bg-slate-800 text-slate-300',
+          badgeBg: 'bg-slate-100 text-slate-700',
           beacon: 'bg-slate-600',
           statusText: 'CIVIC BROADCAST (STANDBY)'
         };
@@ -47,19 +47,19 @@ export const DigitalBoardCard = ({ board }) => {
   const theme = getTheme();
 
   return (
-    <div className={`bg-slate-950 rounded-2xl border p-4 shadow-2xl transition-all ${theme.border}`}>
+    <div className={`bg-slate-50 rounded-2xl border p-4 shadow-2xl transition-all ${theme.border}`}>
       
       {/* Gantry Hardware Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 text-xs">
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full ${theme.beacon}`} />
-          <span className="font-mono font-bold text-slate-200">{board.id}</span>
+          <span className="font-mono font-bold text-slate-800">{board.id}</span>
           <span className="text-slate-500">•</span>
-          <span className="text-slate-400 font-medium truncate max-w-[170px]">{board.intersectionName}</span>
+          <span className="text-slate-600 font-medium truncate max-w-[170px]">{board.intersectionName}</span>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono text-slate-400">
+          <span className="text-[10px] font-mono text-slate-600">
             {isLarge ? 'OVERHEAD GANTRY' : 'ROADSIDE LED'}
           </span>
           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase ${theme.badgeBg}`}>
@@ -85,7 +85,7 @@ export const DigitalBoardCard = ({ board }) => {
             {currentMsg.line1}
           </p>
 
-          <p className={`font-mono text-xs sm:text-sm font-bold tracking-wider uppercase text-slate-200`}>
+          <p className={`font-mono text-xs sm:text-sm font-bold tracking-wider uppercase text-slate-800`}>
             {currentMsg.line2}
           </p>
 
@@ -124,9 +124,11 @@ export const DigitalBoardCard = ({ board }) => {
       {/* Hardware Spec Footer */}
       <div className="mt-3 pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-500 font-mono">
         <span>Channel: {board.laneAllocation}</span>
-        <span className="text-slate-400">{theme.statusText}</span>
+        <span className="text-slate-600">{theme.statusText}</span>
       </div>
 
     </div>
   );
 };
+
+

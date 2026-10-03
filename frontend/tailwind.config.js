@@ -20,8 +20,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Menlo', 'Consolas', 'Courier New', 'monospace'],
+        sans: ['Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        mono: ['Courier New', 'Courier', 'monospace'],
         board: ['Arial Black', 'Impact', 'sans-serif']
       },
       animation: {
