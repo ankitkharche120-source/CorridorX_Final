@@ -13,7 +13,6 @@ import {
   Pause,
   RefreshCw
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export const AmbulanceOperatorDashboard = () => {
   const { 
@@ -203,11 +202,9 @@ export const AmbulanceOperatorDashboard = () => {
               </p>
             </div>
 
-            {/* Customer Map link */}
-            <div className="pt-2 text-center text-xs">
-              <Link to="/customer/emergency" className="text-slate-400 hover:text-white underline">
-                Switch to Consumer Ride Track View
-              </Link>
+            {/* Pilot Cockpit Terminal Info */}
+            <div className="pt-2 text-center text-xs text-slate-500 font-mono">
+              CAD Tactical Terminal • Unit {selectedAmbulance?.id || 'AMB-102'}
             </div>
 
           </div>

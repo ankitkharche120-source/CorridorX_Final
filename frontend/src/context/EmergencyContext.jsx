@@ -8,12 +8,24 @@ import { mockTrips } from '../data/mockTrips';
 const EmergencyContext = createContext();
 
 export const EmergencyProvider = ({ children }) => {
-  // User & Role State (Only 2 Roles: Consumer or Ambulance Driver)
-  const [currentUserRole, setCurrentUserRole] = useState('CUSTOMER'); // 'CUSTOMER' | 'AMBULANCE'
+  // Authentication & Role State: 'CUSTOMER' | 'AMBULANCE'
+  const [currentUserRole, setCurrentUserRole] = useState('CUSTOMER');
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [userName, setUserName] = useState('Rahul Sharma');
   const [userPhone, setUserPhone] = useState('+91 98765 43210');
+  
+  // Driver-specific state
+  const [driverDutyStatus, setDriverDutyStatus] = useState('ONLINE'); // 'ONLINE' | 'BUSY' | 'OFFLINE'
+  const [activeDriver, setActiveDriver] = useState({
+    id: 'AMB-102',
+    name: 'Rajesh Shinde',
+    phone: '+91 98220 14892',
+    vehicleNumber: 'MH 12 QX 4521',
+    rating: 4.9,
+    agency: 'Pune Emergency Medical Services (EMS)'
+  });
 
-  // Emergency Request Data
+  // Emergency Request Data (Consumer)
   const [emergencyRequest, setEmergencyRequest] = useState({
     patientName: 'Rahul Sharma',
     contactNumber: '+91 98765 43210',
@@ -29,8 +41,7 @@ export const EmergencyProvider = ({ children }) => {
   const [selectedHospital, setSelectedHospital] = useState(mockHospitals[0]);
   const [hospitalSelectionDeferred, setHospitalSelectionDeferred] = useState(false);
 
-  // Journey & Trip Status
-  // 'IDLE' | 'REQUESTED' | 'ASSIGNED' | 'EN_ROUTE' | 'ARRIVED' | 'COMPLETED'
+  // Journey & Trip Status: 'IDLE' | 'REQUESTED' | 'ASSIGNED' | 'EN_ROUTE' | 'ARRIVED' | 'COMPLETED'
   const [tripStatus, setTripStatus] = useState('EN_ROUTE');
   const [tripId, setTripId] = useState('TRIP-CX-8841');
 
@@ -50,14 +61,14 @@ export const EmergencyProvider = ({ children }) => {
   // Current GPS coordinates of ambulance
   const currentCoords = mockEmergencyPathWaypoints[simulationIndex] || mockEmergencyPathWaypoints[0];
 
-  // Total route metrics
+  // Route metrics
   const totalWaypoints = mockEmergencyPathWaypoints.length;
   const remainingWaypoints = totalWaypoints - 1 - simulationIndex;
   const distanceRemainingKm = Math.max(0, +( (remainingWaypoints * 0.23).toFixed(1) ));
   const etaMinutes = Math.max(1, Math.ceil(distanceRemainingKm * 1.5));
   const etaSeconds = distanceRemainingKm === 0 ? 0 : etaMinutes * 60 - (simulationIndex % 4) * 12;
 
-  // Simple distance calculator in meters between two lat/lng points (Haversine)
+  // Haversine distance calculator
   const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -75,12 +86,6 @@ export const EmergencyProvider = ({ children }) => {
     const ambPos = mockEmergencyPathWaypoints[currIndex];
     if (!ambPos) return;
 
-    // Node waypoint mappings:
-    // Node 1: waypoint 3
-    // Node 2: waypoint 7
-    // Node 3: waypoint 10
-    // Node 4: waypoint 12
-    // Node 5: waypoint 14
     const nodeWaypointMap = {
       'NODE-01': 3,
       'NODE-02': 7,
@@ -116,7 +121,6 @@ export const EmergencyProvider = ({ children }) => {
 
     setNodes(updatedNodes);
 
-    // Update corresponding Digital Boards
     setBoards(prevBoards => {
       return prevBoards.map(board => {
         const matchingNode = updatedNodes.find(n => n.id === board.nodeId);
@@ -154,12 +158,42 @@ export const EmergencyProvider = ({ children }) => {
     return () => clearInterval(simulationTimerRef.current);
   }, [isSimulating, simulationSpeedMultiplier]);
 
-  // Initial trigger to configure corridor states
   useEffect(() => {
     updateCorridorStateForPosition(simulationIndex);
   }, [simulationIndex]);
 
-  // Actions
+  // Auth Functions
+  const loginAsCustomer = (name, phone) => {
+    setCurrentUserRole('CUSTOMER');
+    setIsAuthenticated(true);
+    setUserName(name || 'Rahul Sharma');
+    setUserPhone(phone || '+91 98765 43210');
+  };
+
+  const loginAsDriver = (unitId) => {
+    setCurrentUserRole('AMBULANCE');
+    setIsAuthenticated(true);
+    const amb = mockAmbulances.find(a => a.id === unitId) || mockAmbulances[0];
+    setSelectedAmbulance(amb);
+    setActiveDriver({
+      id: amb.id,
+      name: amb.driverName,
+      phone: amb.driverPhone,
+      vehicleNumber: amb.vehicleNumber,
+      rating: amb.driverRating,
+      agency: amb.operatorAgency
+    });
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+  };
+
+  const toggleDriverDuty = () => {
+    setDriverDutyStatus(prev => prev === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
+  };
+
+  // Journey Functions
   const startSimulation = () => {
     if (tripStatus === 'ARRIVED') {
       setSimulationIndex(0);
@@ -226,10 +260,6 @@ export const EmergencyProvider = ({ children }) => {
     updateCorridorStateForPosition(mockEmergencyPathWaypoints.length - 1);
   };
 
-  const switchRole = (role) => {
-    setCurrentUserRole(role);
-  };
-
   const createGuestQREmergency = (guestData) => {
     setEmergencyRequest({
       patientName: guestData.name || 'Emergency Patient (QR Handoff)',
@@ -250,9 +280,15 @@ export const EmergencyProvider = ({ children }) => {
       value={{
         currentUserRole,
         setCurrentUserRole,
-        switchRole,
+        isAuthenticated,
+        loginAsCustomer,
+        loginAsDriver,
+        logout,
         userName,
         userPhone,
+        driverDutyStatus,
+        toggleDriverDuty,
+        activeDriver,
         emergencyRequest,
         setEmergencyRequest,
         submitEmergencyRequest,
