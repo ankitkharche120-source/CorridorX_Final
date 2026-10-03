@@ -21,8 +21,8 @@ exports.requestTrip = async (req, res) => {
       contact,
       emergency_type,
       pickup_address,
-      pickup_lat = 18.5074,
-      pickup_lng = 73.8065,
+      pickup_lat,
+      pickup_lng,
       destination_lat,
       destination_lng,
       notes = ''
@@ -35,6 +35,13 @@ exports.requestTrip = async (req, res) => {
       });
     }
 
+    if (!pickup_lat || !pickup_lng) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pickup latitude and longitude are required.'
+      });
+    }
+
     const tripId = `TRIP-CX-${Date.now().toString().slice(-4)}`;
     const newTrip = {
       id: tripId,
@@ -44,7 +51,7 @@ exports.requestTrip = async (req, res) => {
       emergencyType: emergency_type,
       patient_name,
       contact,
-      pickup_address: pickup_address || 'Paud Road, Near Kothrud Stand, Pune',
+      pickup_address: pickup_address || `Coordinates (${parseFloat(pickup_lat).toFixed(4)}, ${parseFloat(pickup_lng).toFixed(4)})`,
       pickupLatitude: parseFloat(pickup_lat),
       pickupLongitude: parseFloat(pickup_lng),
       destinationLatitude: destination_lat ? parseFloat(destination_lat) : null,

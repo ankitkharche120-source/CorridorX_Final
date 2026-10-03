@@ -40,8 +40,8 @@ export const HospitalSelectionPage = () => {
   const [routePreview, setRoutePreview] = useState(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
-  const pickupLat = emergencyRequest.pickupCoords?.lat || 18.5175;
-  const pickupLng = emergencyRequest.pickupCoords?.lng || 73.8401;
+  const pickupLat = emergencyRequest.pickupCoords?.latitude || emergencyRequest.pickupCoords?.lat || (emergencyRequest.pickupCoords ? null : 20.5937);
+  const pickupLng = emergencyRequest.pickupCoords?.longitude || emergencyRequest.pickupCoords?.lng || (emergencyRequest.pickupCoords ? null : 78.9629);
 
   // Fetch nearby hospitals relative to emergency pickup coordinates
   const fetchNearbyHospitals = async (selectedRadius = radiusKm) => {

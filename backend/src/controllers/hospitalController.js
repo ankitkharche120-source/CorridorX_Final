@@ -15,8 +15,15 @@ const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
 
 exports.getAllHospitals = async (req, res) => {
   try {
-    const lat = parseFloat(req.query.lat) || 18.5074;
-    const lng = parseFloat(req.query.lng) || 73.8065;
+    if (!req.query.lat || !req.query.lng) {
+      return res.status(400).json({
+        success: false,
+        message: 'Latitude and Longitude query parameters are required to retrieve hospitals.'
+      });
+    }
+
+    const lat = parseFloat(req.query.lat);
+    const lng = parseFloat(req.query.lng);
 
     const hospitals = db.hospitals.find();
 
@@ -271,57 +278,15 @@ exports.searchHospitalsByQuery = async (req, res) => {
       console.warn('[OSM Hospital Search Error]:', osmSearchErr.message);
     }
 
-    // Comprehensive National Directory of Major Indian Hospital Networks
-    const nationalHospitals = [
-      { name: 'AIIMS New Delhi (All India Institute of Medical Sciences)', address: 'Sri Aurobindo Marg, Ansari Nagar, New Delhi 110029', lat: 28.5672, lng: 77.2100, phone: '+91 11 2658 8500', specialties: ['Apex Trauma Center', 'Cardiac Emergency', 'Organ Transplant'] },
-      { name: 'Safdarjung Hospital & Vardhman Mahavir Medical College', address: 'Ring Road, Opposite AIIMS, New Delhi 110029', lat: 28.5702, lng: 77.2065, phone: '+91 11 2616 5060', specialties: ['Emergency Casualty', 'Burns Center', 'Orthopedic Trauma'] },
-      { name: 'Kokilaben Dhirubhai Ambani Hospital & Medical Research Institute', address: 'Rao Saheb, Achutrao Patwardhan Marg, Four Bungalows, Andheri West, Mumbai 400053', lat: 19.1314, lng: 72.8251, phone: '+91 22 4269 6969', specialties: ['Full-time Specialist System', 'Level-1 Emergency', 'Neuroscience'] },
-      { name: 'Lilavati Hospital & Research Centre', address: 'A-791, Bandra Reclamation, Bandra West, Mumbai 400050', lat: 19.0514, lng: 72.8295, phone: '+91 22 2675 1000', specialties: ['ICU Resuscitation', 'Interventional Cardiology', 'Acute Trauma'] },
-      { name: 'Manipal Hospital Old Airport Road', address: '98, HAL Old Airport Rd, Kodihalli, Bengaluru 560017', lat: 12.9592, lng: 77.6499, phone: '+91 80 2502 4444', specialties: ['24x7 Emergency Room', 'Stroke Care Unit', 'Pediatric ICU'] },
-      { name: 'Apollo Hospitals Greams Road', address: '21 Greams Lane, Thousand Lights, Chennai 600006', lat: 13.0569, lng: 80.2505, phone: '+91 44 2829 0200', specialties: ['Cardiac Center of Excellence', 'Trauma Emergency', 'Liver ICU'] },
-      { name: 'Medanta - The Medicity', address: 'CH Bakhtawar Singh Rd, Sector 38, Gurugram, Haryana 122001', lat: 28.4395, lng: 77.0426, phone: '+91 124 414 1414', specialties: ['Institute of Critical Care & Anaesthesiology', 'Emergency Trauma'] },
-      { name: 'Christian Medical College (CMC)', address: 'Ida Scudder Road, Vellore, Tamil Nadu 632004', lat: 12.9248, lng: 79.1352, phone: '+91 416 228 1000', specialties: ['Trauma Center', 'Surgical Resuscitation', 'Infectious Diseases'] },
-      { name: 'Apollo Hospitals Jubilee Hills', address: 'Road No 72, Opposite Bharatiya Vidya Bhavan School, Film Nagar, Hyderabad 500033', lat: 17.4156, lng: 78.4124, phone: '+91 40 2360 7777', specialties: ['Emergency 1066', 'Critical Care Medicine', 'Neurotrauma'] },
-      { name: 'Ruby Hall Clinic', address: '40 Sassoon Road, Sangamvadi, Pune 411001', lat: 18.5310, lng: 73.8745, phone: '+91 20 6645 5100', specialties: ['Level 1 Trauma', 'Cardiac Resuscitation'] },
-      { name: 'Deenanath Mangeshkar Hospital', address: 'Erandwane, Near Mhatre Bridge, Pune 411004', lat: 18.5020, lng: 73.8290, phone: '+91 20 4015 1000', specialties: ['Trauma Center', 'Cardiac ICU'] }
-    ];
-
-    const lowerQuery = query.toLowerCase();
-    const localDbMatches = db.hospitals.find(h =>
-      h.name.toLowerCase().includes(lowerQuery) ||
-      h.address.toLowerCase().includes(lowerQuery)
-    ).map(h => ({
-      id: h.id,
-      name: h.name,
-      address: h.address,
-      latitude: h.latitude,
-      longitude: h.longitude,
-      phone: h.helpline,
-      distanceKm: calculateDistanceKm(lat, lng, h.latitude, h.longitude),
-      specialties: h.specialties || ['Emergency Trauma', 'Critical Care'],
-      source: 'DATABASE_MATCH'
-    }));
-
-    const nationalMatches = nationalHospitals.filter(h =>
-      h.name.toLowerCase().includes(lowerQuery) ||
-      h.address.toLowerCase().includes(lowerQuery)
-    ).map((h, i) => ({
-      id: `NAT-HOSP-${i + 1}`,
-      name: h.name,
-      address: h.address,
-      latitude: h.lat,
-      longitude: h.lng,
-      phone: h.phone,
-      distanceKm: calculateDistanceKm(lat, lng, h.lat, h.lng),
-      specialties: h.specialties,
-      source: 'NATIONAL_HOSPITAL_DIRECTORY'
-    }));
-
-    const combined = [...localDbMatches, ...nationalMatches]
-      .filter((v, i, a) => a.findIndex(t => t.name === v.name) === i)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
-
-    return res.status(200).json({ success: true, count: combined.length, places: combined, results: combined, hospitals: combined });
+    // If no real Google or OSM places matched, return empty results strictly adhering to Section 32 & 41 (NO cross-state static mock hospitals)
+    return res.status(200).json({
+      success: true,
+      count: 0,
+      places: [],
+      results: [],
+      hospitals: [],
+      message: `No hospital found matching "${query}" in this region.`
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Search failed.' });
   }

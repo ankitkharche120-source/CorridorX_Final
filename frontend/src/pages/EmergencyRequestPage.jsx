@@ -22,19 +22,19 @@ export const EmergencyRequestPage = () => {
   const preselectedCategory = location.state?.selectedCategory || 'Chest Pain';
 
   const [selectedPickup, setSelectedPickup] = useState({
-    latitude: emergencyRequest.pickupCoords?.lat || 18.5175,
-    longitude: emergencyRequest.pickupCoords?.lng || 73.8401,
-    formattedAddress: emergencyRequest.pickupLocation || 'Deccan Gymkhana, Pune, Maharashtra, India',
-    shortTitle: emergencyRequest.pickupLocation?.split(',')[0] || 'Deccan Gymkhana, Pune',
-    source: 'INITIAL'
+    latitude: emergencyRequest.pickupCoords?.latitude || emergencyRequest.pickupCoords?.lat || 20.5937,
+    longitude: emergencyRequest.pickupCoords?.longitude || emergencyRequest.pickupCoords?.lng || 78.9629,
+    formattedAddress: emergencyRequest.pickupLocation || 'Select emergency location',
+    shortTitle: emergencyRequest.pickupLocation?.split(',')[0] || 'Selected Location',
+    source: emergencyRequest.source || 'INITIAL'
   });
 
   const [formData, setFormData] = useState({
     patientName: emergencyRequest.patientName || 'Rahul Sharma',
     contactNumber: emergencyRequest.contactNumber || '+91 98765 43210',
     emergencyType: preselectedCategory,
-    pickupLocation: emergencyRequest.pickupLocation || 'Deccan Gymkhana, Pune, Maharashtra, India',
-    pickupCoords: emergencyRequest.pickupCoords || { lat: 18.5175, lng: 73.8401 },
+    pickupLocation: emergencyRequest.pickupLocation || '',
+    pickupCoords: emergencyRequest.pickupCoords || null,
     notes: emergencyRequest.notes || 'Conscious, severe acute discomfort'
   });
 

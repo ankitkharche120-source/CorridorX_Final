@@ -210,7 +210,7 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
               title="Click to switch to live GPS mode"
             >
               <Radio className="w-3.5 h-3.5 text-amber-400" />
-              <span>DEMO MODE (PUNE CORRIDOR)</span>
+              <span>DEMO MODE (DYNAMIC CORRIDOR)</span>
             </button>
           )}
 

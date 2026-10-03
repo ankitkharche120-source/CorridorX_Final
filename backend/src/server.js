@@ -52,6 +52,27 @@ app.use('/api/boards', boardRoutes);
 app.use('/api/routes', routeRoutes);
 app.use('/api/location', locationRoutes);
 
+// Section 34: Google API & Integration Health Diagnostics
+app.get('/api/integrations/health', (req, res) => {
+  const gMapsKey = process.env.GOOGLE_MAPS_API_KEY;
+  const gPlacesKey = process.env.GOOGLE_PLACES_API_KEY || gMapsKey;
+  const gRoutesKey = process.env.GOOGLE_ROUTES_API_KEY || gMapsKey;
+
+  const isConfigured = (key) => Boolean(key && key.trim().length > 10 && !key.includes('YourGoogle'));
+
+  const status = {
+    googleMaps: isConfigured(gMapsKey) ? 'ok' : 'missing_configuration',
+    googlePlaces: isConfigured(gPlacesKey) ? 'ok' : 'missing_configuration',
+    googleRoutes: isConfigured(gRoutesKey) ? 'ok' : 'missing_configuration',
+    geocoding: isConfigured(gMapsKey) ? 'ok' : 'missing_configuration',
+    database: db ? 'ok' : 'error',
+    socket: io ? 'ok' : 'error',
+    ambulanceProvider: 'demo'
+  };
+
+  return res.status(200).json(status);
+});
+
 // Standard Production Health Check Endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', uptime: process.uptime() });

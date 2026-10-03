@@ -147,8 +147,8 @@ export const ActiveEmergencyPage = () => {
             <LocationPicker
               label="Search city/area, click map, or detect GPS"
               value={{
-                latitude: emergencyRequest.pickupCoords?.lat || 18.5175,
-                longitude: emergencyRequest.pickupCoords?.lng || 73.8401,
+                latitude: emergencyRequest.pickupCoords?.latitude || emergencyRequest.pickupCoords?.lat || 20.5937,
+                longitude: emergencyRequest.pickupCoords?.longitude || emergencyRequest.pickupCoords?.lng || 78.9629,
                 formattedAddress: emergencyRequest.pickupLocation || 'Emergency Location'
               }}
               onConfirm={handleLocationConfirmed}

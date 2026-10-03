@@ -29,8 +29,8 @@ export const AvailableAmbulancesPage = () => {
   // Fetch ambulances relative to chosen emergency pickup location anywhere in India
   const fetchNearbyAmbulances = async () => {
     setIsLoading(true);
-    const lat = emergencyRequest.pickupCoords?.lat || 18.5175;
-    const lng = emergencyRequest.pickupCoords?.lng || 73.8401;
+    const lat = emergencyRequest.pickupCoords?.latitude || emergencyRequest.pickupCoords?.lat || (emergencyRequest.pickupCoords ? null : 20.5937);
+    const lng = emergencyRequest.pickupCoords?.longitude || emergencyRequest.pickupCoords?.lng || (emergencyRequest.pickupCoords ? null : 78.9629);
 
     try {
       const res = await fetch(`http://localhost:5000/api/ambulances/nearby?lat=${lat}&lng=${lng}&radius=30`);
