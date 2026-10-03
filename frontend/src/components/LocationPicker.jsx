@@ -157,6 +157,7 @@ export const LocationPicker = ({
           result.accuracy = accuracy;
           setSelectedLocation(result);
           if (onChange) onChange(result);
+          if (onConfirm) onConfirm(result);
         }
         setIsGpsLoading(false);
         setIsEditing(false);
@@ -164,15 +165,48 @@ export const LocationPicker = ({
       (err) => {
         setIsGpsLoading(false);
         if (err.code === 1) {
-          setGpsError('Location permission denied. Please allow location access in your browser.');
+          setGpsError('Browser blocked location. Click the lock icon in the URL bar to allow GPS, or use "Simulate Any Location" below.');
         } else if (err.code === 2) {
-          setGpsError('GPS location unavailable. Please try searching for your address.');
+          setGpsError('Device GPS signal unavailable. Use search or quick test cities below.');
         } else {
-          setGpsError('Timeout obtaining GPS coordinates.');
+          setGpsError('GPS request timed out. Use search or quick test cities below.');
         }
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+  };
+
+  // Method A.2: Simulate Random GPS Location (Across Major Indian Metro Centers)
+  const handleSimulateRandomGpsLocation = async () => {
+    setIsGpsLoading(true);
+    setGpsError(null);
+
+    const randomHubs = [
+      { name: 'Marine Drive, Mumbai', lat: 18.9438, lng: 72.8234 },
+      { name: 'Connaught Place, New Delhi', lat: 28.6315, lng: 77.2167 },
+      { name: 'Indiranagar 100ft Rd, Bengaluru', lat: 12.9784, lng: 77.6408 },
+      { name: 'Hitec City, Hyderabad', lat: 17.4435, lng: 78.3772 },
+      { name: 'FC Road, Shivajinagar, Pune', lat: 18.5284, lng: 73.8415 },
+      { name: 'Park Street, Kolkata', lat: 22.5519, lng: 88.3524 },
+      { name: 'Anna Nagar, Chennai', lat: 13.0850, lng: 80.2101 },
+      { name: 'Dharampeth, Nagpur', lat: 21.1444, lng: 79.0658 },
+      { name: 'Ellisbridge, Ahmedabad', lat: 23.0244, lng: 72.5683 }
+    ];
+
+    // Pick random and add small jitter (±300m)
+    const base = randomHubs[Math.floor(Math.random() * randomHubs.length)];
+    const lat = +(base.lat + (Math.random() - 0.5) * 0.008).toFixed(6);
+    const lng = +(base.lng + (Math.random() - 0.5) * 0.008).toFixed(6);
+
+    const result = await fetchReverseGeocode(lat, lng, 'SIMULATED_GPS');
+    if (result) {
+      result.accuracy = Math.floor(8 + Math.random() * 12);
+      setSelectedLocation(result);
+      if (onChange) onChange(result);
+      if (onConfirm) onConfirm(result);
+    }
+    setIsGpsLoading(false);
+    setIsEditing(false);
   };
 
   // Method B: Autocomplete Search with Debounce
@@ -499,14 +533,28 @@ export const LocationPicker = ({
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={handleUseCurrentLocation}
-                disabled={isGpsLoading}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-lg shadow-blue-600/30 transition-colors"
-              >
-                {isGpsLoading ? 'Requesting Position...' : 'Refresh GPS Coordinates'}
-              </button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocation}
+                  disabled={isGpsLoading}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-lg shadow-blue-600/30 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Navigation className={`w-3.5 h-3.5 ${isGpsLoading ? 'animate-spin' : ''}`} />
+                  <span>{isGpsLoading ? 'Requesting Position...' : 'Acquire Real Browser GPS'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSimulateRandomGpsLocation}
+                  disabled={isGpsLoading}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/30 transition-colors flex items-center justify-center gap-2"
+                  title="Generate a random real Indian location with live reverse geocoding"
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                  <span>Simulate Random GPS (Test City)</span>
+                </button>
+              </div>
             </div>
           )}
 

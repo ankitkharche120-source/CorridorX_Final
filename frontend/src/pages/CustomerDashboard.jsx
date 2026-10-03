@@ -253,23 +253,53 @@ export const CustomerDashboard = () => {
         {/* 2. WHERE IS THE EMERGENCY? (Section 3 & 4) */}
         {!hasSelectedLocation || isChangingLocation ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h2 className="text-lg font-black text-white tracking-tight">
                   WHERE IS THE EMERGENCY?
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Select your live location, search any location in India, or pick directly on the map.
+                  Select your live GPS location, search any location in India, or pick directly on the map.
                 </p>
               </div>
-              {hasSelectedLocation && (
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsChangingLocation(false)}
-                  className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  type="button"
+                  onClick={async () => {
+                    const hubs = [
+                      { address: 'Connaught Place, New Delhi', lat: 28.6315, lng: 77.2167 },
+                      { address: 'Bandra Bandstand, Mumbai', lat: 19.0544, lng: 72.8205 },
+                      { address: 'Indiranagar 100ft Rd, Bengaluru', lat: 12.9784, lng: 77.6408 },
+                      { address: 'FC Road, Shivajinagar, Pune', lat: 18.5284, lng: 73.8415 },
+                      { address: 'Banjara Hills, Hyderabad', lat: 17.4156, lng: 78.4350 },
+                      { address: 'Park Street, Kolkata', lat: 22.5519, lng: 88.3524 },
+                      { address: 'Civil Lines, Nagpur', lat: 21.1524, lng: 79.0734 }
+                    ];
+                    const rand = hubs[Math.floor(Math.random() * hubs.length)];
+                    await setCustomLocation({
+                      lat: +(rand.lat + (Math.random() - 0.5) * 0.005).toFixed(6),
+                      lng: +(rand.lng + (Math.random() - 0.5) * 0.005).toFixed(6),
+                      address: rand.address,
+                      name: rand.address.split(',')[0],
+                      source: 'RANDOM_GPS_TEST'
+                    });
+                    setIsChangingLocation(false);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
                 >
-                  Cancel
+                  <Crosshair className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Random Indian Location</span>
                 </button>
-              )}
+
+                {hasSelectedLocation && (
+                  <button
+                    onClick={() => setIsChangingLocation(false)}
+                    className="text-xs px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
 
             <LocationPicker
