@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-import { useEmergency, NEUTRAL_INDIA_CENTER, NEUTRAL_INDIA_ZOOM } from '../context/EmergencyContext';
+import { useEmergency } from '../context/EmergencyContext';
+import { DEMO_CONFIG } from '../data/demoConfig';
 import { 
   getGoogleMapsApiKey, 
   hasValidGoogleMapsKey, 
@@ -47,14 +48,9 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
   const hasGKey = hasValidGoogleMapsKey();
   const apiKey = getGoogleMapsApiKey();
 
-  // Active center coordinates (Priority: selected pickup -> live GPS -> neutral India)
-  const activeCenter = emergencyRequest?.pickupCoords
-    ? emergencyRequest.pickupCoords
-    : ((operatingMode === 'REAL' && liveLocation.location) 
-        ? liveLocation.location 
-        : (currentCoords || NEUTRAL_INDIA_CENTER));
-
-  const defaultZoom = emergencyRequest?.pickupCoords ? 14 : (liveLocation.location ? 14 : NEUTRAL_INDIA_ZOOM);
+  // Active center coordinates (Pune Karvenagar demo)
+  const activeCenter = emergencyRequest?.pickupCoords || { lat: DEMO_CONFIG.pickup.lat, lng: DEMO_CONFIG.pickup.lng };
+  const defaultZoom = 14;
 
   // -------------------------------------------------------------
   // Leaflet Custom Icons
@@ -189,59 +185,14 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
   return (
     <div style={{ height }} className="w-full relative overflow-hidden rounded-3xl border border-slate-800 shadow-2xl bg-slate-950 flex flex-col">
       
-      {/* Top Telemetry & Mode Controller Strip */}
-      <div className="bg-slate-900/90 backdrop-blur-md px-4 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-10 text-xs">
-        
-        {/* Operating Mode Indicator */}
+      {/* Clean Telemetry Header */}
+      <div className="bg-slate-900/90 backdrop-blur-md px-4 py-2 border-b border-slate-800 flex items-center justify-between z-10 text-xs">
         <div className="flex items-center gap-2">
-          {operatingMode === 'REAL' ? (
-            <button
-              onClick={toggleOperatingMode}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold hover:bg-emerald-500/30 transition-colors"
-              title="Click to switch to offline simulation mode"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>REAL MODE (LIVE GPS)</span>
-            </button>
-          ) : (
-            <button
-              onClick={toggleOperatingMode}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold hover:bg-amber-500/30 transition-colors"
-              title="Click to switch to live GPS mode"
-            >
-              <Radio className="w-3.5 h-3.5 text-amber-400" />
-              <span>DEMO MODE (DYNAMIC CORRIDOR)</span>
-            </button>
-          )}
-
-          {liveLocation.isWatching && (
-            <span className="text-[11px] text-slate-400 hidden sm:inline font-mono">
-              GPS: ±{Math.round(liveLocation.accuracy || 0)}m • {liveLocation.accuracyQuality}
-            </span>
-          )}
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="font-mono font-bold text-slate-300">PUNE CORRIDOR NETWORK • ACTIVE</span>
         </div>
-
-        {/* Map Engine Selector */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-950 rounded-xl p-0.5 border border-slate-800 text-[11px]">
-            <button
-              onClick={() => setMapEngine('google')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                mapEngine === 'google' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-              }`}
-              title={hasGKey ? "Google Maps Platform (Advanced Markers)" : "Google Maps Key required in .env"}
-            >
-              Google Maps {hasGKey ? '✓' : ''}
-            </button>
-            <button
-              onClick={() => setMapEngine('leaflet')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                mapEngine === 'leaflet' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              OpenStreetMap
-            </button>
-          </div>
+        <div className="text-[11px] font-mono text-slate-400">
+          Live Speed: <strong className="text-white">{currentSpeedKmh || 48} km/h</strong>
         </div>
       </div>
 

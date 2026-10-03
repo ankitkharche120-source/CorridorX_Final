@@ -2,28 +2,27 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { useLiveLocation } from '../hooks/useLiveLocation';
 import { hasValidGoogleMapsKey } from '../services/googleMapsService';
 import { socketService } from '../services/socketService';
-import { hospitalService } from '../services/hospitalService';
-import { ambulanceService } from '../services/ambulanceService';
-import { corridorService } from '../services/corridorService';
+import { DEMO_CONFIG } from '../data/demoConfig';
+import { mockAmbulances } from '../data/mockAmbulances';
+import { mockHospitals } from '../data/mockHospitals';
+import { mockRouteNodes, mockEmergencyPathWaypoints } from '../data/mockRouteNodes';
+import { mockDigitalBoards } from '../data/mockDigitalBoards';
+import { mockTrips } from '../data/mockTrips';
 
 const EmergencyContext = createContext();
 
-// Neutral India Center (used when no user location or emergency pickup is active)
-export const NEUTRAL_INDIA_CENTER = { lat: 20.5937, lng: 78.9629 };
-export const NEUTRAL_INDIA_ZOOM = 5;
-
 export const EmergencyProvider = ({ children }) => {
-  // Operating Mode: 'REAL' (Live GPS, Real APIs) vs 'DEMO'
-  const [operatingMode, setOperatingMode] = useState('REAL');
+  // Operating Mode: 'DEMO' as reliable default
+  const [operatingMode, setOperatingMode] = useState('DEMO');
   const [mapEngine, setMapEngine] = useState(hasValidGoogleMapsKey() ? 'google' : 'leaflet');
 
-  // Real Device GPS Hook
+  // Device GPS Hook (kept available without forcing reliance on it)
   const liveLocation = useLiveLocation({
     enabled: operatingMode === 'REAL',
     highAccuracy: true
   });
 
-  // Authentication State: Session-persisted for demo smoothness
+  // Authentication State: Session-persisted
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return Boolean(sessionStorage.getItem('corridorx_auth'));
   });
@@ -33,52 +32,50 @@ export const EmergencyProvider = ({ children }) => {
     return sessionStorage.getItem('corridorx_role') || 'CUSTOMER';
   });
 
-  // User Profile Data (Section 2: Clearly labeled DEMO PROFILE)
-  const [userName, setUserName] = useState(() => sessionStorage.getItem('corridorx_user_name') || 'Rahul Sharma');
-  const [userPhone, setUserPhone] = useState(() => sessionStorage.getItem('corridorx_user_phone') || '9999999999');
+  // User Profile Data
+  const [userName, setUserName] = useState(() => sessionStorage.getItem('corridorx_user_name') || DEMO_CONFIG.patient.name);
+  const [userPhone, setUserPhone] = useState(() => sessionStorage.getItem('corridorx_user_phone') || DEMO_CONFIG.patient.phone);
 
-  // Driver Location Mode: 'DEMO' | 'REAL_GPS'
+  // Driver state
   const [driverLocationMode, setDriverLocationMode] = useState('DEMO');
   const [driverDutyStatus, setDriverDutyStatus] = useState('ONLINE');
   const [activeDriver, setActiveDriver] = useState({
-    id: 'AMB-102',
-    name: 'Rajesh Shinde',
-    phone: '+91 98220 14892',
-    vehicleNumber: 'IND-EMS-102',
-    rating: 4.9,
-    agency: 'National Emergency Rapid Unit'
+    id: DEMO_CONFIG.ambulance.id,
+    name: DEMO_CONFIG.ambulance.driverName,
+    phone: DEMO_CONFIG.ambulance.driverPhone,
+    vehicleNumber: DEMO_CONFIG.ambulance.vehicleNumber,
+    rating: DEMO_CONFIG.ambulance.driverRating,
+    agency: DEMO_CONFIG.ambulance.operatorAgency
   });
 
-  // Emergency Request State — NO hardcoded Karvenagar/Pune coordinates
+  // Emergency Request State — Default to DEMO_CONFIG (Karvenagar, Pune)
   const [emergencyRequest, setEmergencyRequest] = useState({
-    patientName: 'Rahul Sharma',
-    contactNumber: '9999999999',
-    emergencyType: 'Chest Pain / Acute Cardiac Emergency',
-    pickupLocation: '',
-    pickupCoords: null, // null until user clicks GPS, searches, or clicks map
-    shortTitle: '',
-    notes: 'Urgent emergency dispatch requested. Demo profile record.',
-    source: null
+    patientName: DEMO_CONFIG.patient.name,
+    contactNumber: DEMO_CONFIG.patient.phone,
+    emergencyType: DEMO_CONFIG.patient.emergencyType,
+    pickupLocation: DEMO_CONFIG.pickup.name,
+    pickupCoords: { lat: DEMO_CONFIG.pickup.lat, lng: DEMO_CONFIG.pickup.lng },
+    shortTitle: DEMO_CONFIG.pickup.shortTitle,
+    notes: 'Severe acute cardiac emergency. Demo corridor pre-emption test.',
+    source: 'DEMO_STABLE'
   });
 
-  // Nearby Available Ambulances (Generated dynamically around selected location)
-  const [availableAmbulances, setAvailableAmbulances] = useState([]);
-  const [selectedAmbulance, setSelectedAmbulance] = useState(null);
+  // Ambulances & Hospitals from stable demo datasets
+  const [availableAmbulances, setAvailableAmbulances] = useState(mockAmbulances);
+  const [selectedAmbulance, setSelectedAmbulance] = useState(mockAmbulances[0]);
 
-  // Real Nearby Hospitals for selected location
-  const [nearbyHospitals, setNearbyHospitals] = useState([]);
-  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [nearbyHospitals, setNearbyHospitals] = useState(mockHospitals);
+  const [selectedHospital, setSelectedHospital] = useState(mockHospitals[0]);
   const [hospitalSelectionDeferred, setHospitalSelectionDeferred] = useState(false);
 
   // Trip and Corridor Status: 'IDLE' | 'REQUESTED' | 'ASSIGNED' | 'EN_ROUTE' | 'ARRIVED' | 'COMPLETED'
   const [tripStatus, setTripStatus] = useState('IDLE');
   const [tripId, setTripId] = useState('TRIP-CX-8841');
 
-  // Real Route & Dynamic Corridor Waypoints
-  const [calculatedRoute, setCalculatedRoute] = useState(null);
-  const [activeWaypoints, setActiveWaypoints] = useState([]);
-  const [nodes, setNodes] = useState([]);
-  const [boards, setBoards] = useState([]);
+  // Corridor Waypoints, Nodes & Digital Boards
+  const [activeWaypoints, setActiveWaypoints] = useState(mockEmergencyPathWaypoints);
+  const [nodes, setNodes] = useState(mockRouteNodes);
+  const [boards, setBoards] = useState(mockDigitalBoards);
 
   // Simulation & Journey Metrics
   const [simulationIndex, setSimulationIndex] = useState(0);
@@ -96,167 +93,97 @@ export const EmergencyProvider = ({ children }) => {
   const [realEtaSeconds, setRealEtaSeconds] = useState(null);
 
   // Active Map Center
-  // Priority: 1. Selected Emergency Pickup, 2. Live Device GPS, 3. Neutral India Center
-  const activeCenter = emergencyRequest.pickupCoords
-    ? emergencyRequest.pickupCoords
-    : (liveLocation.location ? liveLocation.location : NEUTRAL_INDIA_CENTER);
+  const activeCenter = emergencyRequest?.pickupCoords || { lat: DEMO_CONFIG.pickup.lat, lng: DEMO_CONFIG.pickup.lng };
 
-  // Current moving ambulance position
-  const currentCoords = (operatingMode === 'REAL' && currentUserRole === 'AMBULANCE' && driverLocationMode === 'REAL_GPS' && liveLocation.location)
-    ? liveLocation.location
-    : (activeWaypoints.length > 0
-        ? (activeWaypoints[simulationIndex] || activeWaypoints[0])
-        : (emergencyRequest.pickupCoords || NEUTRAL_INDIA_CENTER));
+  // Current moving ambulance position along demo waypoints
+  const currentCoords = activeWaypoints[simulationIndex] || activeWaypoints[0];
 
-  // Dynamic remaining metrics
-  const distanceRemainingKm = realDistanceRemainingKm !== null
+  // Route metrics
+  const totalWaypoints = activeWaypoints.length;
+  const remainingWaypoints = Math.max(0, totalWaypoints - 1 - simulationIndex);
+  const simDistanceKm = Math.max(0, +((remainingWaypoints * 0.22).toFixed(1)));
+  const simEtaMinutes = Math.max(1, Math.ceil(simDistanceKm * 1.5));
+  const simEtaSeconds = simDistanceKm === 0 ? 0 : simEtaMinutes * 60 - (simulationIndex % 4) * 12;
+
+  const distanceRemainingKm = (operatingMode === 'REAL' && realDistanceRemainingKm !== null)
     ? realDistanceRemainingKm
-    : (calculatedRoute
-        ? Math.max(0.1, +(calculatedRoute.distanceKm * (1 - (simulationIndex / Math.max(1, activeWaypoints.length - 1))))).toFixed(1)
-        : 0);
+    : simDistanceKm;
 
-  const etaMinutes = realEtaMinutes !== null
+  const etaMinutes = (operatingMode === 'REAL' && realEtaMinutes !== null)
     ? realEtaMinutes
-    : (calculatedRoute
-        ? Math.max(1, Math.round(calculatedRoute.etaMinutes * (1 - (simulationIndex / Math.max(1, activeWaypoints.length - 1)))))
-        : 0);
+    : simEtaMinutes;
 
-  const etaSeconds = realEtaSeconds !== null
+  const etaSeconds = (operatingMode === 'REAL' && realEtaSeconds !== null)
     ? realEtaSeconds
-    : etaMinutes * 60;
+    : simEtaSeconds;
 
-  // -------------------------------------------------------------
-  // Dynamic Route & Corridor Re-computation on Location Changes
-  // -------------------------------------------------------------
-  const recomputeRouteAndCorridor = async (pickup, hosp) => {
-    if (!pickup?.lat || !pickup?.lng || !hosp?.latitude || !hosp?.longitude) {
-      return;
-    }
+  // Haversine distance calculator
+  const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
-    try {
-      const data = await corridorService.computeRoute(
-        { latitude: pickup.lat, longitude: pickup.lng },
-        { latitude: hosp.latitude, longitude: hosp.longitude }
+  // Synchronize Nodes and Digital Boards based on ambulance location
+  const updateCorridorStateForPosition = (currIndex) => {
+    const ambPos = activeWaypoints[currIndex];
+    if (!ambPos) return;
+
+    const nodeWaypointMap = {
+      'NODE-01': 3,
+      'NODE-02': 7,
+      'NODE-03': 10,
+      'NODE-04': 12,
+      'NODE-05': 14
+    };
+
+    const updatedNodes = nodes.map(node => {
+      const nodeWaypoint = nodeWaypointMap[node.id] ?? 0;
+      const distance = calculateDistanceMeters(
+        ambPos.lat, ambPos.lng,
+        node.location.lat, node.location.lng
       );
 
-      if (data.success && data.route) {
-        setCalculatedRoute(data.route);
-
-        let points = data.route.pathPoints;
-        if (!points || points.length < 2) {
-          points = [];
-          for (let i = 0; i <= 14; i++) {
-            const frac = i / 14;
-            points.push({
-              latitude: pickup.lat + (hosp.latitude - pickup.lat) * frac,
-              longitude: pickup.lng + (hosp.longitude - pickup.lng) * frac
-            });
-          }
-        }
-
-        const waypoints = points.map(p => ({ lat: p.latitude, lng: p.longitude }));
-        setActiveWaypoints(waypoints);
-        setSimulationIndex(0);
-
-        // Generate dynamic corridor nodes along the real road route
-        const dynamicNodes = corridorService.generateCorridorNodesFromRoute(waypoints, hosp.name);
-        setNodes(dynamicNodes);
-      }
-    } catch (err) {
-      console.warn('[Corridor Engine] Route calculation error:', err);
-    }
-  };
-
-  // -------------------------------------------------------------
-  // Set Custom Emergency Location (Core Architecture - Section 3)
-  // -------------------------------------------------------------
-  const setCustomLocation = async (loc) => {
-    if (!loc) return;
-    const lat = loc.lat ?? loc.latitude;
-    const lng = loc.lng ?? loc.longitude;
-    if (!lat || !lng) return;
-
-    const address = loc.formattedAddress || loc.address || loc.name || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
-    const shortTitle = loc.shortTitle || loc.name || address.split(',')[0];
-
-    const updatedRequest = {
-      ...emergencyRequest,
-      pickupLocation: address,
-      pickupCoords: { lat, lng },
-      shortTitle,
-      source: loc.source || 'USER_SELECTION'
-    };
-    setEmergencyRequest(updatedRequest);
-
-    // 1. Fetch real nearby hospitals from the exact coordinates
-    try {
-      const hospData = await hospitalService.getNearbyHospitals(lat, lng, 10);
-      setNearbyHospitals(hospData.hospitals);
-      if (hospData.hospitals.length > 0) {
-        const topHosp = hospData.hospitals[0];
-        setSelectedHospital(topHosp);
-        // 2. Compute real route to this hospital
-        await recomputeRouteAndCorridor({ lat, lng }, topHosp);
-      }
-    } catch (hErr) {
-      console.warn('[EmergencyContext] Failed to query hospitals for location:', hErr);
-    }
-
-    // 3. Generate location-aware demo ambulances around this area
-    try {
-      const ambData = await ambulanceService.getNearbyAmbulances(lat, lng, 25, emergencyRequest.emergencyType);
-      setAvailableAmbulances(ambData.ambulances);
-      if (ambData.ambulances.length > 0) {
-        setSelectedAmbulance(ambData.ambulances[0]);
-      }
-    } catch (aErr) {
-      console.warn('[EmergencyContext] Failed to generate local ambulances:', aErr);
-    }
-  };
-
-  // Re-center to browser live GPS
-  const recenterToGps = async () => {
-    if (liveLocation.requestCurrentPosition) {
-      liveLocation.requestCurrentPosition();
-    }
-    if (liveLocation.location?.lat && liveLocation.location?.lng) {
-      await setCustomLocation({
-        lat: liveLocation.location.lat,
-        lng: liveLocation.location.lng,
-        address: 'Live GPS Location',
-        source: 'LIVE_DEVICE_GPS'
-      });
-    }
-  };
-
-  // Update corridor signal nodes status as ambulance moves along the route
-  const updateCorridorStateForPosition = (currIndex) => {
-    if (!activeWaypoints || activeWaypoints.length === 0 || !nodes || nodes.length === 0) return;
-
-    const totalWaypoints = activeWaypoints.length;
-    const step = Math.max(1, Math.floor(totalWaypoints / nodes.length));
-
-    const updatedNodes = nodes.map((node, idx) => {
-      const nodeWaypointIndex = Math.min(step * (idx + 1), totalWaypoints - 1);
       let status = 'STANDBY';
-
-      if (currIndex > nodeWaypointIndex) {
+      if (currIndex > nodeWaypoint) {
         status = 'PASSED';
-      } else if (currIndex === nodeWaypointIndex || Math.abs(currIndex - nodeWaypointIndex) <= 1) {
+      } else if (distance <= 350 || currIndex === nodeWaypoint) {
         status = 'ACTIVE';
-      } else if (nodeWaypointIndex - currIndex <= 3) {
+      } else if (distance <= 1100 || (nodeWaypoint - currIndex) <= 3) {
         status = 'PREPARING';
       } else {
         status = 'STANDBY';
       }
 
-      return { ...node, status };
+      return {
+        ...node,
+        status,
+        currentDistanceMeters: Math.round(distance)
+      };
     });
 
     setNodes(updatedNodes);
+
+    // Update roadside digital boards matching corridor nodes
+    setBoards(prevBoards => {
+      return prevBoards.map(board => {
+        const matchingNode = updatedNodes.find(n => n.id === board.nodeId);
+        const boardStatus = matchingNode ? matchingNode.status : 'STANDBY';
+        return {
+          ...board,
+          status: boardStatus
+        };
+      });
+    });
   };
 
-  // Simulation execution loop
+  // Run simulation loop
   useEffect(() => {
     if (isSimulating && activeWaypoints.length > 0) {
       simulationTimerRef.current = setInterval(() => {
@@ -264,7 +191,7 @@ export const EmergencyProvider = ({ children }) => {
           if (prev < activeWaypoints.length - 1) {
             const nextIdx = prev + 1;
             updateCorridorStateForPosition(nextIdx);
-            setCurrentSpeedKmh(Math.floor(45 + Math.random() * 20));
+            setCurrentSpeedKmh(Math.floor(48 + Math.random() * 18));
             return nextIdx;
           } else {
             setIsSimulating(false);
@@ -273,7 +200,7 @@ export const EmergencyProvider = ({ children }) => {
             return prev;
           }
         });
-      }, 1800 / simulationSpeedMultiplier);
+      }, 1900 / simulationSpeedMultiplier);
     } else {
       clearInterval(simulationTimerRef.current);
     }
@@ -281,41 +208,29 @@ export const EmergencyProvider = ({ children }) => {
     return () => clearInterval(simulationTimerRef.current);
   }, [isSimulating, simulationSpeedMultiplier, activeWaypoints.length]);
 
-  // Socket.IO Room Subscriptions
   useEffect(() => {
-    socketService.connect();
-    if (tripId) socketService.joinTrip(tripId);
-    if (selectedAmbulance?.id) socketService.joinAmbulance(selectedAmbulance.id);
-    if (selectedHospital?.id) socketService.joinHospital(selectedHospital.id);
+    updateCorridorStateForPosition(simulationIndex);
+  }, [simulationIndex]);
 
-    const unsubLocation = socketService.onTripLocation((data) => {
-      if (operatingMode === 'REAL' && data.latitude && data.longitude) {
-        setRealStreamedCoords({ lat: data.latitude, lng: data.longitude });
-        if (data.speed !== undefined) setCurrentSpeedKmh(data.speed);
-      }
-    });
+  // Set Custom Emergency Location (Keeps search support, falls back cleanly without breaking demo)
+  const setCustomLocation = async (loc) => {
+    if (!loc) return;
+    const lat = loc.lat ?? loc.latitude ?? DEMO_CONFIG.pickup.lat;
+    const lng = loc.lng ?? loc.longitude ?? DEMO_CONFIG.pickup.lng;
+    const address = loc.formattedAddress || loc.address || loc.name || DEMO_CONFIG.pickup.name;
+    const shortTitle = loc.shortTitle || loc.name || address.split(',')[0];
 
-    const unsubEta = socketService.onTripEta((data) => {
-      if (operatingMode === 'REAL') {
-        if (data.distanceKm !== undefined) setRealDistanceRemainingKm(data.distanceKm);
-        if (data.etaMinutes !== undefined) setRealEtaMinutes(data.etaMinutes);
-        if (data.etaSeconds !== undefined) setRealEtaSeconds(data.etaSeconds);
-      }
-    });
+    setEmergencyRequest(prev => ({
+      ...prev,
+      pickupLocation: address,
+      pickupCoords: { lat, lng },
+      shortTitle,
+      source: loc.source || 'SEARCH'
+    }));
+  };
 
-    const unsubStatus = socketService.onTripStatusChanged((data) => {
-      if (data.status) setTripStatus(data.status);
-    });
-
-    return () => {
-      unsubLocation();
-      unsubEta();
-      unsubStatus();
-    };
-  }, [tripId, selectedAmbulance?.id, selectedHospital?.id, operatingMode]);
-
-  // Auth Handlers (Section 1)
-  const loginAsCustomer = (name = 'Ankit Sharma', phone = '9999999999', emergency = 'Chest Pain / Acute Cardiac Emergency') => {
+  // Auth Handlers
+  const loginAsCustomer = (name = DEMO_CONFIG.patient.name, phone = DEMO_CONFIG.patient.phone, emergency = DEMO_CONFIG.patient.emergencyType) => {
     sessionStorage.setItem('corridorx_auth', 'true');
     sessionStorage.setItem('corridorx_role', 'CUSTOMER');
     sessionStorage.setItem('corridorx_user_name', name);
@@ -328,26 +243,36 @@ export const EmergencyProvider = ({ children }) => {
       ...prev,
       patientName: name,
       contactNumber: phone,
-      emergencyType: emergency
+      emergencyType: emergency,
+      pickupLocation: DEMO_CONFIG.pickup.name,
+      pickupCoords: { lat: DEMO_CONFIG.pickup.lat, lng: DEMO_CONFIG.pickup.lng },
+      shortTitle: DEMO_CONFIG.pickup.shortTitle
     }));
+    // Reset to stable demo hospitals and ambulances
+    setNearbyHospitals(mockHospitals);
+    setSelectedHospital(mockHospitals[0]);
+    setAvailableAmbulances(mockAmbulances);
+    setSelectedAmbulance(mockAmbulances[0]);
   };
 
-  const loginAsDriver = (unitId = 'AMB-102') => {
+  const loginAsDriver = (unitId = DEMO_CONFIG.ambulance.id) => {
     sessionStorage.setItem('corridorx_auth', 'true');
     sessionStorage.setItem('corridorx_role', 'AMBULANCE');
     setCurrentUserRole('AMBULANCE');
     setIsAuthenticated(true);
+    const amb = mockAmbulances.find(a => a.id === unitId) || mockAmbulances[0];
+    setSelectedAmbulance(amb);
     setActiveDriver({
-      id: unitId,
-      name: 'Rajesh Shinde',
-      phone: '+91 98220 14892',
-      vehicleNumber: 'IND-EMS-102',
-      rating: 4.9,
-      agency: 'National Emergency Rapid Unit'
+      id: amb.id,
+      name: amb.driverName,
+      phone: amb.driverPhone,
+      vehicleNumber: amb.vehicleNumber,
+      rating: amb.driverRating,
+      agency: amb.operatorAgency
     });
   };
 
-  const loginAsHospital = (hospId = 'HOSP-01') => {
+  const loginAsHospital = (hospId = DEMO_CONFIG.hospital.id) => {
     sessionStorage.setItem('corridorx_auth', 'true');
     sessionStorage.setItem('corridorx_role', 'HOSPITAL');
     setCurrentUserRole('HOSPITAL');
@@ -380,8 +305,15 @@ export const EmergencyProvider = ({ children }) => {
     setIsSimulating(true);
   };
 
+  const startSimulation = () => {
+    if (tripStatus === 'ARRIVED') {
+      setSimulationIndex(0);
+      setTripStatus('EN_ROUTE');
+    }
+    setIsSimulating(true);
+  };
+
   const pauseSimulation = () => setIsSimulating(false);
-  const startSimulation = () => setIsSimulating(true);
 
   const resetSimulation = () => {
     setIsSimulating(false);
@@ -406,26 +338,29 @@ export const EmergencyProvider = ({ children }) => {
   const handleArrival = () => {
     setTripStatus('ARRIVED');
     setIsSimulating(false);
-    if (activeWaypoints.length > 0) {
-      setSimulationIndex(activeWaypoints.length - 1);
-      updateCorridorStateForPosition(activeWaypoints.length - 1);
-    }
+    setSimulationIndex(activeWaypoints.length - 1);
+    updateCorridorStateForPosition(activeWaypoints.length - 1);
   };
 
   const chooseHospital = (hosp) => {
     setSelectedHospital(hosp);
     setHospitalSelectionDeferred(false);
-    if (emergencyRequest.pickupCoords) {
-      recomputeRouteAndCorridor(emergencyRequest.pickupCoords, hosp);
-    }
+    setTripStatus('HOSPITAL_SELECTED');
   };
 
   const chooseAmbulance = (amb) => {
     setSelectedAmbulance(amb);
+    setTripStatus('AMBULANCE_SELECTED');
   };
 
   const deferHospitalSelection = () => {
     setHospitalSelectionDeferred(true);
+    setTripStatus('AMBULANCE_SELECTED');
+  };
+
+  const submitEmergencyRequest = (data) => {
+    setEmergencyRequest(prev => ({ ...prev, ...data }));
+    setTripStatus('REQUESTED');
   };
 
   return (
@@ -433,6 +368,7 @@ export const EmergencyProvider = ({ children }) => {
       value={{
         isAuthenticated,
         currentUserRole,
+        setCurrentUserRole,
         loginAsCustomer,
         loginAsDriver,
         loginAsHospital,
@@ -447,8 +383,8 @@ export const EmergencyProvider = ({ children }) => {
         activeDriver,
         emergencyRequest,
         setEmergencyRequest,
+        submitEmergencyRequest,
         setCustomLocation,
-        recenterToGps,
         liveLocation,
         activeCenter,
         currentCoords,
@@ -461,7 +397,11 @@ export const EmergencyProvider = ({ children }) => {
         chooseHospital,
         hospitalSelectionDeferred,
         deferHospitalSelection,
-        calculatedRoute,
+        calculatedRoute: {
+          distanceKm: selectedHospital?.distanceKm || 2.8,
+          etaMinutes: selectedHospital?.etaMinutes || 6,
+          summary: 'Karvenagar → Nal Stop Flyover → Erandwane DP Road'
+        },
         activeWaypoints,
         nodes,
         boards,
@@ -486,7 +426,10 @@ export const EmergencyProvider = ({ children }) => {
         operatingMode,
         setOperatingMode,
         mapEngine,
-        setMapEngine
+        setMapEngine,
+        mockAmbulances,
+        mockHospitals,
+        mockTrips
       }}
     >
       {children}
