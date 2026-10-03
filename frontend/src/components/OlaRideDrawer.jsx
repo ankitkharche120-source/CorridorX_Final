@@ -122,12 +122,20 @@ export const OlaRideDrawer = () => {
               <Hospital className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Hospital Destination</span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Hospital Destination</span>
+                <Link
+                  to="/customer/hospitals"
+                  className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-semibold transition-colors"
+                >
+                  Change Hospital
+                </Link>
+              </div>
               {selectedHospital ? (
                 <>
                   <p className="text-white font-bold">{selectedHospital.name}</p>
                   <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
-                    Pre-registered Emergency Bay • {selectedHospital.icuBedsAvailable} ICU Beds Open
+                    Pre-registered Emergency Bay • {selectedHospital.icuBedsAvailable || selectedHospital.icu_beds || 6} ICU Beds Open
                   </p>
                 </>
               ) : (

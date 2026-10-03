@@ -63,6 +63,41 @@ class GoogleGeocodingService {
       }
     }
 
+    // High-accuracy live reverse geocoding via OpenStreetMap Nominatim
+    try {
+      const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+      const nomRes = await fetch(nomUrl, {
+        headers: { 'User-Agent': 'CorridorX-EMS-Emergency/1.0' }
+      });
+      if (nomRes.ok) {
+        const nomData = await nomRes.json();
+        if (nomData && nomData.display_name) {
+          const addr = nomData.address || {};
+          const locality = addr.city || addr.town || addr.village || addr.suburb || addr.county || 'India';
+          const area = addr.amenity || addr.road || addr.suburb || addr.neighbourhood || locality;
+          const state = addr.state || 'India';
+          const shortTitle = `${area}, ${locality}`;
+
+          const geocoded = {
+            latitude: lat,
+            longitude: lng,
+            formattedAddress: nomData.display_name,
+            shortTitle,
+            placeId: `osm-${nomData.osm_type || 'node'}-${nomData.osm_id || Math.floor(Math.random() * 100000)}`,
+            locality,
+            state,
+            postalCode: addr.postcode || '',
+            source: 'LIVE_REVERSE_GEOCODE_NOMINATIM'
+          };
+
+          geocodeCache.set(cacheKey, geocoded);
+          return geocoded;
+        }
+      }
+    } catch (nomErr) {
+      console.warn('[Nominatim Reverse Geocode] Request failed:', nomErr.message);
+    }
+
     // High-accuracy fallback approximation based on known major Indian coordinates
     const fallbackAddress = this.approximateIndianAddress(lat, lng);
     const result = {
@@ -81,7 +116,7 @@ class GoogleGeocodingService {
   }
 
   /**
-   * India-wide place search / autocomplete using Google Places API (New)
+   * India-wide place search / autocomplete using Google Places API (New) with live Nominatim fallback
    */
   async autocomplete(input, userLocation = null) {
     if (!input || input.trim().length < 2) return [];
@@ -129,8 +164,11 @@ class GoogleGeocodingService {
                 return {
                   placeId: pred.placeId,
                   title: pred.structuredFormat?.mainText?.text || pred.text?.text,
+                  mainText: pred.structuredFormat?.mainText?.text || pred.text?.text,
                   description: pred.structuredFormat?.secondaryText?.text || pred.text?.text,
+                  secondaryText: pred.structuredFormat?.secondaryText?.text || '',
                   fullAddress: pred.text?.text || '',
+                  formattedAddress: pred.text?.text || '',
                   source: 'GOOGLE_PLACES_AUTOCOMPLETE'
                 };
               });
@@ -142,6 +180,46 @@ class GoogleGeocodingService {
       } catch (err) {
         console.warn('[Places Autocomplete API] Call failed, using city lookup fallback:', err.message);
       }
+    }
+
+    // Live search across India using OpenStreetMap Nominatim
+    try {
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=in&limit=8&addressdetails=1`;
+      const sRes = await fetch(searchUrl, {
+        headers: { 'User-Agent': 'CorridorX-EMS-Emergency/1.0' }
+      });
+      if (sRes.ok) {
+        const items = await sRes.json();
+        if (Array.isArray(items) && items.length > 0) {
+          const liveResults = items.map(item => {
+            const addr = item.address || {};
+            const city = addr.city || addr.town || addr.village || addr.county || '';
+            const state = addr.state || '';
+            const mainText = item.name || item.display_name.split(',')[0];
+            const secondaryText = city && state ? `${city}, ${state}` : item.display_name.split(',').slice(1, 3).join(',').trim();
+
+            return {
+              placeId: `osm-${item.osm_type || 'node'}-${item.osm_id}`,
+              title: mainText,
+              mainText,
+              description: item.display_name,
+              secondaryText,
+              fullAddress: item.display_name,
+              formattedAddress: item.display_name,
+              location: {
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon)
+              },
+              source: 'LIVE_OSM_SEARCH'
+            };
+          });
+
+          autocompleteCache.set(cacheKey, liveResults);
+          return liveResults;
+        }
+      }
+    } catch (nomSearchErr) {
+      console.warn('[Nominatim Search Error]', nomSearchErr.message);
     }
 
     // Fallback search across popular Indian hubs & landmarks
@@ -178,6 +256,22 @@ class GoogleGeocodingService {
         }
       } catch (e) {
         console.warn('[Place Details API] Error:', e.message);
+      }
+    }
+
+    if (placeId && placeId.startsWith('osm-')) {
+      for (const list of autocompleteCache.values()) {
+        const found = list.find(item => item.placeId === placeId);
+        if (found && found.location) {
+          return {
+            placeId,
+            name: found.title || found.mainText,
+            formattedAddress: found.fullAddress || found.formattedAddress,
+            latitude: found.location.lat,
+            longitude: found.location.lng,
+            source: 'LIVE_OSM_DETAILS'
+          };
+        }
       }
     }
 

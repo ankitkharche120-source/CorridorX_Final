@@ -42,10 +42,10 @@ export const EmergencyProvider = ({ children }) => {
   const [emergencyRequest, setEmergencyRequest] = useState({
     patientName: 'Rahul Sharma',
     contactNumber: '+91 98765 43210',
-    emergencyType: 'Chest Pain / Acute STEMI',
-    pickupLocation: 'Paud Road, Near Kothrud Stand, Pune',
-    pickupCoords: { lat: 18.5074, lng: 73.8065 },
-    notes: 'Severe chest tightness radiating to left arm. Patient is conscious.',
+    emergencyType: 'Acute Emergency Medical Condition',
+    pickupLocation: 'Live Emergency Location',
+    pickupCoords: { lat: 18.5175, lng: 73.8401 },
+    notes: 'Conscious, urgent emergency dispatch requested',
     isGuestQR: false
   });
 
@@ -55,7 +55,7 @@ export const EmergencyProvider = ({ children }) => {
   const [hospitalSelectionDeferred, setHospitalSelectionDeferred] = useState(false);
 
   // Journey & Trip Status: 'IDLE' | 'REQUESTED' | 'ASSIGNED' | 'EN_ROUTE' | 'ARRIVED' | 'COMPLETED'
-  const [tripStatus, setTripStatus] = useState('EN_ROUTE');
+  const [tripStatus, setTripStatus] = useState('IDLE');
   const [tripId, setTripId] = useState('TRIP-CX-8841');
 
   // Corridor & Digital Board Dynamic States
@@ -184,21 +184,41 @@ export const EmergencyProvider = ({ children }) => {
     selectedHospital?.name
   ]);
 
-  // Automatically update pickup coordinates with real GPS if in REAL mode for customer
+  // Automatically reverse geocode and fetch real local hospitals when device GPS is acquired
   useEffect(() => {
-    if (operatingMode === 'REAL' && currentUserRole === 'CUSTOMER' && liveLocation.location) {
-      setEmergencyRequest(prev => {
-        if (prev.pickupLocation.includes('Paud Road') || prev.pickupLocation.includes('Live Device GPS')) {
-          return {
-            ...prev,
-            pickupLocation: `Live Device GPS (±${Math.round(liveLocation.accuracy || 10)}m)`,
-            pickupCoords: liveLocation.location
-          };
+    if (operatingMode === 'REAL' && liveLocation.location?.lat && liveLocation.location?.lng) {
+      const lat = liveLocation.location.lat;
+      const lng = liveLocation.location.lng;
+
+      const resolveLiveGpsLocation = async () => {
+        try {
+          // 1. Live reverse geocode to get real street / area / city address
+          const res = await fetch(`http://localhost:5000/api/location/reverse-geocode?lat=${lat}&lng=${lng}`);
+          const data = await res.json();
+          if (data.success && data.location) {
+            setEmergencyRequest(prev => ({
+              ...prev,
+              pickupLocation: data.location.formattedAddress,
+              pickupCoords: { lat, lng },
+              shortTitle: data.location.shortTitle,
+              source: 'REAL_DEVICE_GPS'
+            }));
+          }
+
+          // 2. Fetch real local hospitals for these exact coordinates
+          const hospRes = await fetch(`http://localhost:5000/api/hospitals/nearby-places?lat=${lat}&lng=${lng}&radius=20000`);
+          const hospData = await hospRes.json();
+          if (hospData.success && Array.isArray(hospData.places) && hospData.places.length > 0) {
+            setSelectedHospital(hospData.places[0]);
+          }
+        } catch (err) {
+          console.warn('[EmergencyContext] Auto GPS resolution error:', err);
         }
-        return prev;
-      });
+      };
+
+      resolveLiveGpsLocation();
     }
-  }, [operatingMode, currentUserRole, liveLocation.location, liveLocation.accuracy]);
+  }, [operatingMode, liveLocation.location?.lat, liveLocation.location?.lng]);
 
   // Socket.IO Room Subscriptions & Event Handlers
   useEffect(() => {
@@ -510,6 +530,49 @@ export const EmergencyProvider = ({ children }) => {
     setIsSimulating(true);
   };
 
+  const setCustomLocation = async (loc) => {
+    if (!loc) return;
+    const lat = loc.lat ?? loc.latitude;
+    const lng = loc.lng ?? loc.longitude;
+    if (!lat || !lng) return;
+    const address = loc.formattedAddress || loc.address || loc.name || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+
+    setEmergencyRequest(prev => ({
+      ...prev,
+      pickupLocation: address,
+      pickupCoords: { lat, lng },
+      shortTitle: loc.name || loc.shortTitle || address
+    }));
+
+    // Reset simulation index to begin from the new origin
+    setSimulationIndex(0);
+
+    // Fetch real nearby physical hospitals for this location immediately
+    try {
+      const hospRes = await fetch(`http://localhost:5000/api/hospitals/nearby?lat=${lat}&lng=${lng}&radius=25000`);
+      const hospData = await hospRes.json();
+      const list = hospData.places || hospData.results || hospData.hospitals;
+      if (hospData.success && Array.isArray(list) && list.length > 0) {
+        setSelectedHospital(list[0]);
+      }
+    } catch (err) {
+      console.warn('[EmergencyContext] Failed to fetch hospitals for custom location:', err);
+    }
+  };
+
+  const recenterToGps = async () => {
+    if (liveLocation.requestLocation) {
+      liveLocation.requestLocation();
+    }
+    if (liveLocation.location?.lat && liveLocation.location?.lng) {
+      await setCustomLocation({
+        lat: liveLocation.location.lat,
+        lng: liveLocation.location.lng,
+        address: 'Live GPS Location'
+      });
+    }
+  };
+
   return (
     <EmergencyContext.Provider
       value={{
@@ -563,6 +626,8 @@ export const EmergencyProvider = ({ children }) => {
         createGuestQREmergency,
         activeWaypoints,
         calculatedRoute,
+        setCustomLocation,
+        recenterToGps,
         mockAmbulances,
         mockHospitals,
         mockTrips

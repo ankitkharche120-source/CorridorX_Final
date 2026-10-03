@@ -82,7 +82,7 @@ export const CorridorTimeline = () => {
                   {node.name.split('/')[0].trim()}
                 </h4>
                 <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                  {node.type.replace(/_/g, ' ')}
+                  {(node.type || 'TRAFFIC_SIGNAL_JUNCTION').replace(/_/g, ' ')}
                 </p>
               </div>
 

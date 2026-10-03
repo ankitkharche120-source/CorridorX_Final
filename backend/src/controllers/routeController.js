@@ -142,9 +142,62 @@ exports.computeEmergencyRoute = async (req, res) => {
           const errText = await gResponse.text();
           console.warn('[Google Routes API] Non-OK response:', errText);
         }
-      } catch (gErr) {
-        console.warn('[Google Routes API] Call failed, using mathematical fallback:', gErr.message);
+      } catch (err) {
+        console.warn('[Google Routes API Error]:', err.message);
       }
+    }
+
+    // Live real road routing across India via Open Source Routing Machine (OSRM)
+    try {
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`;
+      const osrmRes = await fetch(osrmUrl);
+      if (osrmRes.ok) {
+        const osrmData = await osrmRes.json();
+        if (osrmData.routes && osrmData.routes.length > 0) {
+          const firstR = osrmData.routes[0];
+          const distMeters = Math.round(firstR.distance);
+          // Green wave emergency response speeds are ~25% faster
+          const durSeconds = Math.max(30, Math.round(firstR.duration * 0.75));
+          const coords = firstR.geometry?.coordinates || [];
+          
+          // Sample down if too dense, but keep route smooth
+          const sampledPoints = [];
+          const stepSize = Math.max(1, Math.floor(coords.length / 40));
+          for (let i = 0; i < coords.length; i += stepSize) {
+            sampledPoints.push({
+              latitude: +(coords[i][1]).toFixed(6),
+              longitude: +(coords[i][0]).toFixed(6)
+            });
+          }
+          if (coords.length > 0 && (sampledPoints.length === 0 || sampledPoints[sampledPoints.length - 1].latitude !== coords[coords.length - 1][1])) {
+            sampledPoints.push({
+              latitude: +(coords[coords.length - 1][1]).toFixed(6),
+              longitude: +(coords[coords.length - 1][0]).toFixed(6)
+            });
+          }
+
+          const osrmRoute = {
+            id: 'ROUTE-LIVE-ROAD',
+            isPrimary: true,
+            description: 'Live Traffic-Optimized Emergency Corridor',
+            distanceMeters: distMeters,
+            distanceKm: +(distMeters / 1000).toFixed(1),
+            durationSeconds: durSeconds,
+            etaMinutes: Math.max(1, Math.round(durSeconds / 60)),
+            encodedPolyline: null,
+            pathPoints: sampledPoints
+          };
+
+          return res.status(200).json({
+            success: true,
+            source: 'LIVE_OSRM_ROAD_ROUTING',
+            route: osrmRoute,
+            alternatives: []
+          });
+        }
+      }
+    } catch (osrmErr) {
+      console.warn('[OSRM Road Routing Error]:', osrmErr.message);
     }
 
     // High-accuracy urban mathematical fallback (Haversine with 1.28 urban road detour factor)

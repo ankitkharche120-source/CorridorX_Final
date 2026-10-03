@@ -38,6 +38,23 @@ export const EmergencyRequestPage = () => {
     notes: emergencyRequest.notes || 'Conscious, severe acute discomfort'
   });
 
+  React.useEffect(() => {
+    if (emergencyRequest.pickupCoords?.lat && emergencyRequest.pickupCoords?.lng) {
+      setSelectedPickup({
+        latitude: emergencyRequest.pickupCoords.lat,
+        longitude: emergencyRequest.pickupCoords.lng,
+        formattedAddress: emergencyRequest.pickupLocation || 'Live GPS Location',
+        shortTitle: emergencyRequest.pickupLocation?.split(',')[0] || 'Live Location',
+        source: emergencyRequest.source || 'LIVE_GPS'
+      });
+      setFormData(prev => ({
+        ...prev,
+        pickupLocation: emergencyRequest.pickupLocation || prev.pickupLocation,
+        pickupCoords: emergencyRequest.pickupCoords
+      }));
+    }
+  }, [emergencyRequest.pickupCoords?.lat, emergencyRequest.pickupCoords?.lng, emergencyRequest.pickupLocation]);
+
   const emergencyTypes = [
     'Accident / Polytrauma',
     'Chest Pain / Cardiac',

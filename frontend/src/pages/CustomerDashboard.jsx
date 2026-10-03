@@ -47,7 +47,7 @@ export const CustomerDashboard = () => {
               CorridorX Emergency Assistance
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1">
-              Pune Metropolitan Fleet: 18 Ambulances on standby • Dynamic Green Wave Active
+              Pan-India Emergency Response Fleet • Real-time GPS & Dynamic Green Wave Active
             </p>
           </div>
 

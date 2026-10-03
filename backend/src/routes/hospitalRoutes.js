@@ -3,6 +3,7 @@ const router = express.Router();
 const hospitalController = require('../controllers/hospitalController');
 
 router.get('/', hospitalController.getAllHospitals);
+router.get('/nearby', hospitalController.searchNearbyPlaces);
 router.get('/nearby-places', hospitalController.searchNearbyPlaces);
 router.get('/search', hospitalController.searchHospitalsByQuery);
 router.get('/:id', hospitalController.getHospitalById);
