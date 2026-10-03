@@ -12,7 +12,8 @@ import {
   Clock, 
   Gauge, 
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 
 export const ControlCenterPage = () => {
@@ -20,13 +21,22 @@ export const ControlCenterPage = () => {
     emergencyRequest, 
     selectedHospital, 
     selectedAmbulance, 
+    tripStage,
     tripStatus, 
+    corridorStatus,
+    distanceToPickup,
+    etaToPickup,
+    distanceToHospital,
+    etaToHospital,
     distanceRemainingKm, 
     etaMinutes,
     currentSpeedKmh,
-    nodes
+    nodes,
+    resetDemo
   } = useEmergency();
 
+  const isPickupPhase = tripStage === 'PICKUP_STAGE';
+  const isArrivedHospital = tripStatus === 'ARRIVED_AT_HOSPITAL' || tripStatus === 'COMPLETED';
   const activeNodesCount = nodes.filter(n => n.status === 'ACTIVE' || n.status === 'PREPARING').length;
 
   return (
@@ -42,7 +52,7 @@ export const ControlCenterPage = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold uppercase">
-                  NATIONAL TRAFFIC & DISPATCH CONSOLE
+                  CENTRAL TRAFFIC & DISPATCH CONSOLE
                 </span>
                 <span className="text-xs text-slate-400">STATUS: <strong className="text-emerald-400">OPERATIONAL</strong></span>
               </div>
@@ -54,14 +64,22 @@ export const ControlCenterPage = () => {
 
           <div className="flex items-center gap-2 font-mono text-xs">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
-              <span className={`w-2 h-2 rounded-full ${tripStatus === 'ARRIVED' ? 'bg-emerald-500' : 'bg-red-500 animate-ping'}`} />
-              <span className="text-slate-400">TRIP:</span>
-              <span className="text-white font-bold">{tripStatus}</span>
+              <span className={`w-2 h-2 rounded-full ${
+                isArrivedHospital 
+                  ? 'bg-emerald-500' 
+                  : (isPickupPhase ? 'bg-blue-400' : 'bg-red-500 animate-ping')
+              }`} />
+              <span className="text-slate-400">PHASE:</span>
+              <span className="text-white font-bold">
+                {isArrivedHospital && 'COMPLETED'}
+                {!isArrivedHospital && isPickupPhase && (tripStatus === 'ARRIVED_AT_PICKUP' ? 'AT PICKUP' : 'DISPATCH TO PICKUP')}
+                {!isArrivedHospital && !isPickupPhase && 'HOSPITAL CORRIDOR'}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
               <Clock className="w-3.5 h-3.5 text-red-400" />
-              <span className="text-slate-400">ETA:</span>
-              <span className="text-white font-bold">{tripStatus === 'ARRIVED' ? '0 min' : `~${etaMinutes} min`}</span>
+              <span className="text-slate-400">{isPickupPhase ? 'PICKUP ETA:' : 'HOSP ETA:'}</span>
+              <span className="text-white font-bold">{isArrivedHospital ? '0 min' : `~${etaMinutes} min`}</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
               <Gauge className="w-3.5 h-3.5 text-blue-400" />
@@ -93,44 +111,54 @@ export const ControlCenterPage = () => {
           {/* Control Telemetry Column (4 / 12) */}
           <div className="lg:col-span-4 flex flex-col gap-4">
             
-            {/* Live Incident Status */}
+            {/* Live Incident Status (Section 18) */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
-                  ACTIVE CORRIDOR TELEMETRY
+                  ACTIVE RESPONSE TELEMETRY
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  REAL ROADS
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold border ${
+                  isPickupPhase 
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                }`}>
+                  {isPickupPhase ? 'STAGE 1: TO PICKUP' : 'STAGE 2: TO HOSPITAL'}
                 </span>
               </div>
 
               {/* Patient Location */}
-              <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800 text-xs space-y-1">
+              <div className={`p-3 rounded-2xl border text-xs space-y-1 ${
+                isPickupPhase ? 'bg-slate-950 border-blue-500/50' : 'bg-slate-950/70 border-slate-800'
+              }`}>
                 <div className="flex items-center gap-2 text-slate-400">
-                  <MapPin className="w-3.5 h-3.5 text-red-400" />
-                  <span className="uppercase text-[10px] font-bold">Origin / Pickup Location</span>
+                  <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="uppercase text-[10px] font-bold">
+                    Pickup Location {isPickupPhase && '• ACTIVE DISPATCH DESTINATION'}
+                  </span>
                 </div>
                 <p className="text-white font-bold truncate">
-                  {emergencyRequest.pickupLocation || 'No active location selected yet'}
+                  {emergencyRequest.pickupLocation}
                 </p>
-                {emergencyRequest.pickupCoords && (
-                  <p className="font-mono text-[11px] text-slate-400">
-                    {emergencyRequest.pickupCoords.lat.toFixed(4)}, {emergencyRequest.pickupCoords.lng.toFixed(4)}
-                  </p>
-                )}
+                <p className="font-mono text-[11px] text-slate-400">
+                  ETA to Pickup: <strong className="text-white">~{etaToPickup} min</strong> ({distanceToPickup} km)
+                </p>
               </div>
 
               {/* Destination Hospital */}
-              <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800 text-xs space-y-1">
+              <div className={`p-3 rounded-2xl border text-xs space-y-1 ${
+                !isPickupPhase ? 'bg-slate-950 border-emerald-500/50' : 'bg-slate-950/70 border-slate-800'
+              }`}>
                 <div className="flex items-center gap-2 text-slate-400">
                   <Hospital className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="uppercase text-[10px] font-bold">Receiving Medical Center</span>
+                  <span className="uppercase text-[10px] font-bold">
+                    Receiving Medical Center {!isPickupPhase && '• ACTIVE CORRIDOR DESTINATION'}
+                  </span>
                 </div>
                 <p className="text-white font-bold truncate">
-                  {selectedHospital?.name || 'Awaiting hospital assignment'}
+                  {selectedHospital?.name}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  {selectedHospital?.address || 'India-wide emergency directory'}
+                  Hospital ETA: <strong className="text-white">~{etaToHospital} min</strong> ({distanceToHospital} km)
                 </p>
               </div>
 
@@ -141,37 +169,56 @@ export const ControlCenterPage = () => {
                   <span className="uppercase text-[10px] font-bold">Assigned Emergency Unit</span>
                 </div>
                 <p className="text-white font-bold">
-                  {selectedAmbulance?.name || 'ALS Cardiac Unit 102'}
+                  {selectedAmbulance?.name || 'ALS Cardiac Unit 101'}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Pilot: {selectedAmbulance?.driver_name || selectedAmbulance?.driverName || 'Rajesh Shinde'} • {selectedAmbulance?.vehicle_number || selectedAmbulance?.vehicleNumber || 'IND-EMS-102'}
+                  Pilot: {selectedAmbulance?.driverName} • {selectedAmbulance?.vehicleNumber}
                 </p>
               </div>
 
-              {/* Traffic Corridor Pre-emption Status */}
+              {/* Traffic Corridor Pre-emption Status (Section 18) */}
               <div className={`rounded-2xl p-3.5 text-xs space-y-1.5 border ${
-                tripStatus === 'ARRIVED'
+                isArrivedHospital
                   ? 'bg-emerald-950/30 border-emerald-500/40'
-                  : 'bg-red-950/30 border-red-500/40'
+                  : (!isPickupPhase ? 'bg-red-950/30 border-red-500/40' : 'bg-slate-950 border-slate-800')
               }`}>
                 <div className={`flex items-center gap-2 font-mono font-bold text-[10px] uppercase ${
-                  tripStatus === 'ARRIVED' ? 'text-emerald-400' : 'text-red-400'
+                  isArrivedHospital 
+                    ? 'text-emerald-400' 
+                    : (!isPickupPhase ? 'text-red-400' : 'text-slate-400')
                 }`}>
-                  {tripStatus === 'ARRIVED' ? (
+                  {isArrivedHospital ? (
                     <ShieldCheck className="w-3.5 h-3.5" />
-                  ) : (
+                  ) : !isPickupPhase ? (
                     <Radio className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <div className="w-2 h-2 rounded-full bg-slate-500" />
                   )}
-                  <span>{tripStatus === 'ARRIVED' ? 'CORRIDOR RELEASED' : 'SIMULATED GREEN WAVE ENGINE'}</span>
+                  <span>
+                    {isArrivedHospital && 'CORRIDOR RELEASED'}
+                    {!isArrivedHospital && !isPickupPhase && 'GREEN WAVE ENGINE ACTIVE'}
+                    {isPickupPhase && 'CORRIDOR IN STANDBY'}
+                  </span>
                 </div>
                 <p className="text-slate-300 text-[11px]">
-                  {tripStatus === 'ARRIVED'
-                    ? 'Patient delivered safely to trauma bay. All traffic signals normalized.'
-                    : activeNodesCount > 0 
-                    ? `${activeNodesCount} signal junctions actively clearing emergency lane.`
-                    : 'Corridor in standby. Awaiting dispatch activation.'}
+                  {isArrivedHospital && 'Patient delivered safely to trauma bay. All traffic signals normalized.'}
+                  {!isArrivedHospital && !isPickupPhase && (
+                    activeNodesCount > 0 
+                      ? `${activeNodesCount} signal junctions actively clearing emergency lane.`
+                      : 'Emergency lane pre-emption active.'
+                  )}
+                  {isPickupPhase && 'Corridor is on standby while ambulance navigates to patient pickup.'}
                 </p>
               </div>
+
+              {/* Reset Demo Button */}
+              <button
+                onClick={resetDemo}
+                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-700 transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Reset Demo State</span>
+              </button>
             </div>
 
           </div>

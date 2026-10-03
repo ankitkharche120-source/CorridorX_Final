@@ -6,10 +6,14 @@ import {
   MapPin, 
   Hospital, 
   Star, 
-  HeartPulse,
-  Radio,
-  CheckCircle2,
-  RotateCcw
+  HeartPulse, 
+  Radio, 
+  CheckCircle2, 
+  RotateCcw,
+  UserCheck,
+  ArrowRight,
+  Clock,
+  Gauge
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -19,16 +23,29 @@ export const OlaRideDrawer = () => {
     selectedAmbulance, 
     selectedHospital, 
     emergencyRequest, 
+    tripStage,
     tripStatus,
+    corridorStatus,
+    distanceToPickup,
+    etaToPickup,
+    distanceToHospital,
+    etaToHospital,
     distanceRemainingKm,
     etaMinutes,
     currentSpeedKmh,
     nodes,
+    handlePatientPickedUp,
+    startHospitalJourney,
     resetDemo
   } = useEmergency();
 
-  const isArrived = tripStatus === 'ARRIVED' || tripStatus === 'COMPLETED';
-  const activeNode = !isArrived 
+  const isPickupPhase = tripStage === 'PICKUP_STAGE';
+  const isArrivedPickup = tripStatus === 'ARRIVED_AT_PICKUP';
+  const isPatientOnboard = tripStatus === 'PATIENT_ONBOARD';
+  const isHospitalPhase = tripStage === 'HOSPITAL_STAGE';
+  const isArrivedHospital = tripStatus === 'ARRIVED_AT_HOSPITAL' || tripStatus === 'COMPLETED';
+
+  const activeNode = (isHospitalPhase && !isArrivedHospital)
     ? (nodes.find(n => n.status === 'ACTIVE') || nodes.find(n => n.status === 'PREPARING'))
     : null;
 
@@ -40,21 +57,42 @@ export const OlaRideDrawer = () => {
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isArrived ? 'bg-emerald-400' : 'animate-ping bg-red-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isArrived ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isArrivedHospital 
+                  ? 'bg-emerald-400' 
+                  : (isArrivedPickup ? 'bg-amber-400' : 'animate-ping bg-red-400')
+              }`} />
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                isArrivedHospital ? 'bg-emerald-500' : (isArrivedPickup ? 'bg-amber-500' : 'bg-red-500')
+              }`} />
             </span>
-            <span className={`text-xs font-black tracking-wider uppercase ${isArrived ? 'text-emerald-400' : 'text-red-400'}`}>
-              {isArrived ? 'ARRIVED AT HOSPITAL' : 'AMBULANCE EN ROUTE'}
+            <span className={`text-xs font-black tracking-wider uppercase ${
+              isArrivedHospital 
+                ? 'text-emerald-400' 
+                : (isArrivedPickup ? 'text-amber-400' : (isPickupPhase ? 'text-blue-400' : 'text-red-400'))
+            }`}>
+              {isArrivedHospital && 'ARRIVED AT HOSPITAL'}
+              {isHospitalPhase && !isArrivedHospital && 'EN ROUTE TO HOSPITAL'}
+              {isPatientOnboard && 'PATIENT ONBOARD'}
+              {isArrivedPickup && 'AMBULANCE AT PICKUP'}
+              {tripStatus === 'EN_ROUTE_TO_PICKUP' && 'AMBULANCE EN ROUTE TO YOU'}
+              {tripStatus === 'AVAILABLE' && 'AMBULANCE READY'}
+              {tripStatus === 'ASSIGNED' && 'AMBULANCE ASSIGNED'}
             </span>
           </div>
 
           <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold font-mono border ${
-            isArrived 
-              ? 'bg-slate-800 text-slate-400 border-slate-700' 
-              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+            isHospitalPhase && !isArrivedHospital
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              : 'bg-slate-800 text-slate-400 border border-slate-700'
           }`}>
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{isArrived ? 'CORRIDOR RELEASED' : 'Green Wave Active'}</span>
+            <span>
+              {isArrivedHospital && 'CORRIDOR RELEASED'}
+              {isHospitalPhase && !isArrivedHospital && 'GREEN WAVE ACTIVE'}
+              {isPatientOnboard && 'CORRIDOR PREPARING'}
+              {isPickupPhase && 'CORRIDOR STANDBY'}
+            </span>
           </div>
         </div>
 
@@ -73,7 +111,7 @@ export const OlaRideDrawer = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="font-extrabold text-sm sm:text-base text-white tracking-tight">
-                  {selectedAmbulance?.name || 'ALS Cardiac Unit 102'}
+                  {selectedAmbulance?.name || 'ALS Cardiac Unit 101'}
                 </h4>
                 <div className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20">
                   <Star className="w-3 h-3 fill-current" />
@@ -83,17 +121,17 @@ export const OlaRideDrawer = () => {
 
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="font-mono text-[11px] font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                  {selectedAmbulance?.vehicleNumber || 'MH 12 QX 4521'}
+                  {selectedAmbulance?.vehicleNumber || 'MH 12 AB 1011'}
                 </span>
                 <span className="text-xs text-slate-400">
-                  Pilot: <strong className="text-slate-200">{selectedAmbulance?.driverName || 'Rajesh Shinde'}</strong>
+                  Pilot: <strong className="text-slate-200">{selectedAmbulance?.driverName || 'Vikram Jadhav'}</strong>
                 </span>
               </div>
             </div>
           </div>
 
           <a
-            href={`tel:${selectedAmbulance?.driverPhone || '+919822014892'}`}
+            href={`tel:${selectedAmbulance?.driverPhone || '+919822011011'}`}
             className="w-10 h-10 rounded-full bg-slate-800 hover:bg-emerald-600 hover:text-white text-emerald-400 flex items-center justify-center transition-colors border border-slate-700 shrink-0"
             title="Call Ambulance Driver"
           >
@@ -101,8 +139,78 @@ export const OlaRideDrawer = () => {
           </a>
         </div>
 
-        {/* Dynamic Roadside Board Message Alert (Section 18: Never show approaching after arrival) */}
-        {!isArrived && activeNode && (
+        {/* SECTION 8: Prominent Card when Ambulance Reaches Pickup */}
+        {isArrivedPickup && (
+          <div className="mt-3.5 bg-gradient-to-r from-amber-950/60 to-slate-900 border border-amber-500/80 rounded-2xl p-4 shadow-xl space-y-3">
+            <div className="flex items-center gap-2 text-amber-400">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <div>
+                <h4 className="text-sm font-extrabold text-white">AMBULANCE ARRIVED</h4>
+                <p className="text-xs text-amber-300">Pickup location reached • Unit {selectedAmbulance?.id}</p>
+              </div>
+            </div>
+            <button
+              onClick={handlePatientPickedUp}
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>PATIENT PICKED UP</span>
+            </button>
+          </div>
+        )}
+
+        {/* SECTION 9: Prominent Card when Patient is Onboard */}
+        {isPatientOnboard && (
+          <div className="mt-3.5 bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/80 rounded-2xl p-4 shadow-xl space-y-3">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <UserCheck className="w-5 h-5 shrink-0" />
+              <div>
+                <h4 className="text-sm font-extrabold text-white">PATIENT ONBOARD</h4>
+                <p className="text-xs text-slate-300">Destination: <strong className="text-white">{selectedHospital?.name}</strong></p>
+              </div>
+            </div>
+            <button
+              onClick={startHospitalJourney}
+              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all"
+            >
+              <span>START HOSPITAL JOURNEY</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Contextual Metric Tile: ETA & Distance (Section 12, 13 & 14) */}
+        {!isArrivedPickup && !isPatientOnboard && !isArrivedHospital && (
+          <div className="mt-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between font-mono">
+            <div>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                {isPickupPhase ? 'ETA TO PICKUP' : 'ETA TO HOSPITAL'}
+              </p>
+              <p className="text-xl font-black text-white mt-0.5">
+                ~{isPickupPhase ? etaToPickup : etaToHospital} min
+              </p>
+            </div>
+            <div className="h-8 w-px bg-slate-800" />
+            <div>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                {isPickupPhase ? 'DIST TO PICKUP' : 'DIST TO HOSPITAL'}
+              </p>
+              <p className="text-xl font-black text-slate-200 mt-0.5">
+                {isPickupPhase ? distanceToPickup : distanceToHospital} km
+              </p>
+            </div>
+            <div className="h-8 w-px bg-slate-800" />
+            <div>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">CORRIDOR</p>
+              <p className={`text-xs font-bold mt-1.5 ${isHospitalPhase ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
+                {isHospitalPhase ? 'ACTIVE' : 'STANDBY'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Roadside Sign Pre-emption Alert: Only active during Stage 2 */}
+        {isHospitalPhase && !isArrivedHospital && activeNode && (
           <div className="mt-3.5 bg-slate-950/80 border border-red-500/40 rounded-xl p-3">
             <div className="flex items-center gap-2 text-red-400 text-[10px] font-mono font-bold uppercase">
               <Radio className="w-3.5 h-3.5 animate-spin text-red-500" />
@@ -114,12 +222,13 @@ export const OlaRideDrawer = () => {
           </div>
         )}
 
-        {isArrived && (
+        {/* Arrival Confirmed at Hospital */}
+        {isArrivedHospital && (
           <div className="mt-3.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl p-3 flex items-center gap-2.5">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             <div>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">ARRIVAL CONFIRMED</span>
-              <p className="text-xs text-slate-200 mt-0.5">Ambulance reached trauma bay. All corridor signals normalized.</p>
+              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">HOSPITAL ARRIVAL CONFIRMED</span>
+              <p className="text-xs text-slate-200 mt-0.5">Patient delivered safely to trauma bay. All corridor signals normalized.</p>
             </div>
           </div>
         )}
@@ -127,23 +236,31 @@ export const OlaRideDrawer = () => {
         {/* Trip Destination & Patient Info */}
         <div className="mt-3.5 space-y-2.5">
           {/* Pickup Point */}
-          <div className="flex items-start gap-3 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80 text-xs">
+          <div className={`flex items-start gap-3 p-2.5 rounded-xl border text-xs ${
+            isPickupPhase ? 'bg-slate-950 border-blue-500/40' : 'bg-slate-950/40 border-slate-800/80'
+          }`}>
             <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
               <MapPin className="w-3.5 h-3.5" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pickup Point</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                Pickup Location {isPickupPhase && '• ACTIVE TARGET'}
+              </span>
               <p className="text-slate-200 font-medium">{emergencyRequest.pickupLocation}</p>
             </div>
           </div>
 
           {/* Hospital Destination */}
-          <div className="flex items-start gap-3 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80 text-xs">
+          <div className={`flex items-start gap-3 p-2.5 rounded-xl border text-xs ${
+            isHospitalPhase ? 'bg-slate-950 border-emerald-500/40' : 'bg-slate-950/40 border-slate-800/80'
+          }`}>
             <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
               <Hospital className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Hospital Destination</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                Hospital Destination {isHospitalPhase && '• ACTIVE CORRIDOR TARGET'}
+              </span>
               {selectedHospital ? (
                 <>
                   <p className="text-white font-bold">{selectedHospital.name}</p>
@@ -177,7 +294,7 @@ export const OlaRideDrawer = () => {
 
       {/* Bottom Actions: Arrival Screen Option vs Ongoing */}
       <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-        {isArrived ? (
+        {isArrivedHospital ? (
           <button
             onClick={() => {
               resetDemo();
@@ -200,7 +317,7 @@ export const OlaRideDrawer = () => {
               to="/customer"
               className="flex-1 py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold text-center shadow-lg shadow-red-600/30 transition-colors"
             >
-              Back to Request
+              Back to Dashboard
             </Link>
           </>
         )}

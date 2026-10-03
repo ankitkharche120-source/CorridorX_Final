@@ -3,23 +3,35 @@ import { useEmergency } from '../context/EmergencyContext';
 import { CheckCircle2, AlertTriangle, Radio, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
 
 export const CorridorTimeline = () => {
-  const { nodes, isSimulating } = useEmergency();
+  const { nodes, isSimulating, tripStage, tripStatus, corridorStatus } = useEmergency();
+
+  const isPickupPhase = tripStage === 'PICKUP_STAGE';
 
   return (
     <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-xl">
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
-            <Zap className="w-4 h-4 animate-pulse" />
+          <div className={`p-1.5 rounded-lg border ${
+            isPickupPhase 
+              ? 'bg-slate-800 text-slate-400 border-slate-700'
+              : 'bg-red-500/10 text-red-400 border-red-500/20'
+          }`}>
+            <Zap className={`w-4 h-4 ${isPickupPhase ? '' : 'animate-pulse'}`} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white tracking-tight">Dynamic Corridor Propagation</h3>
-            <p className="text-[11px] text-slate-400">Roadside Traffic Lights & LED Gantry Pre-emption</p>
+            <h3 className="text-sm font-bold text-white tracking-tight">
+              {isPickupPhase ? 'Corridor Standby • Awaiting Patient Pickup' : 'Dynamic Corridor Propagation'}
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              {isPickupPhase 
+                ? 'Traffic signals will engage priority green wave once patient is onboard' 
+                : 'Roadside Traffic Lights & LED Gantry Pre-emption Active'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-[11px] font-mono">
           <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            {nodes.filter(n => n.status === 'PASSED').length}/{nodes.length} Cleared
+            {isPickupPhase ? 'STAGE 1: PICKUP' : `${nodes.filter(n => n.status === 'PASSED').length}/${nodes.length} Cleared`}
           </span>
         </div>
       </div>

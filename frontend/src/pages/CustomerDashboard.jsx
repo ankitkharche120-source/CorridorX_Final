@@ -28,8 +28,18 @@ export const CustomerDashboard = () => {
     chooseHospital, 
     nearbyHospitals, 
     selectedAmbulance, 
+    availableAmbulances = [],
+    assignAmbulance,
+    autoAssignNearestAmbulance,
+    startPickupJourney,
     startEmergencyJourney, 
+    tripStage,
     tripStatus,
+    corridorStatus,
+    distanceToPickup,
+    etaToPickup,
+    distanceToHospital,
+    etaToHospital,
     distanceRemainingKm,
     etaMinutes,
     resetDemo
@@ -99,9 +109,9 @@ export const CustomerDashboard = () => {
     }
   };
 
-  // Launch emergency & proceed to live tracking
+  // Launch emergency dispatch (Stage 1: Ambulance to Pickup)
   const handleLaunchEmergency = () => {
-    startEmergencyJourney();
+    startPickupJourney();
     navigate('/customer/emergency');
   };
 
@@ -194,19 +204,28 @@ export const CustomerDashboard = () => {
           </div>
         </div>
 
-        {/* Active Journey Card if already en route */}
-        {tripStatus === 'EN_ROUTE' && (
+        {/* Active Journey Banner if en route */}
+        {(tripStatus === 'EN_ROUTE_TO_PICKUP' || tripStatus === 'ARRIVED_AT_PICKUP' || tripStatus === 'PATIENT_ONBOARD' || tripStatus === 'EN_ROUTE_TO_HOSPITAL') && (
           <div className="bg-red-950/40 border border-red-500/80 rounded-3xl p-5 shadow-2xl flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
               <div>
-                <h3 className="text-base font-extrabold text-white">Ambulance En Route</h3>
-                <p className="text-xs text-slate-300">Green wave dynamic corridor is currently clearing intersections.</p>
+                <h3 className="text-base font-extrabold text-white">
+                  {tripStatus === 'EN_ROUTE_TO_PICKUP' && `Ambulance ${selectedAmbulance?.id} En Route To Pickup`}
+                  {tripStatus === 'ARRIVED_AT_PICKUP' && `Ambulance ${selectedAmbulance?.id} Reached Pickup!`}
+                  {tripStatus === 'PATIENT_ONBOARD' && `Patient Onboard • Preparing Hospital Route`}
+                  {tripStatus === 'EN_ROUTE_TO_HOSPITAL' && `Corridor Active • En Route To ${selectedHospital?.name}`}
+                </h3>
+                <p className="text-xs text-slate-300">
+                  {tripStage === 'PICKUP_STAGE' 
+                    ? `ETA to pickup: ~${etaToPickup} min (${distanceToPickup} km) • Corridor in standby`
+                    : `ETA to hospital: ~${etaToHospital} min (${distanceToHospital} km) • Dynamic green wave active`}
+                </p>
               </div>
             </div>
             <button
               onClick={() => navigate('/customer/emergency')}
-              className="px-4 py-2 rounded-xl bg-white text-slate-950 font-bold text-xs shadow hover:bg-slate-100"
+              className="px-4 py-2 rounded-xl bg-white text-slate-950 font-bold text-xs shadow hover:bg-slate-100 shrink-0"
             >
               View Live Tracker
             </button>
@@ -239,7 +258,7 @@ export const CustomerDashboard = () => {
               <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-red-400" />
-                  <span className="text-slate-400">ETA:</span>
+                  <span className="text-slate-400">{tripStage === 'PICKUP_STAGE' ? 'ETA to Pickup:' : 'ETA to Hospital:'}</span>
                   <strong className="text-white">~{etaMinutes} min</strong>
                 </div>
                 <div className="flex items-center gap-2">
@@ -248,7 +267,7 @@ export const CustomerDashboard = () => {
                   <strong className="text-white">{distanceRemainingKm} km</strong>
                 </div>
                 <div className="text-slate-400 hidden sm:block truncate max-w-[200px]">
-                  To: {selectedHospital?.name}
+                  {tripStage === 'PICKUP_STAGE' ? `Pickup: ${pickup.name.split(',')[0]}` : `To: ${selectedHospital?.name}`}
                 </div>
               </div>
             </div>
@@ -317,33 +336,86 @@ export const CustomerDashboard = () => {
                 })}
               </div>
 
-              {/* Assigned Demo Ambulance Card */}
-              {selectedAmbulance && (
-                <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-blue-400" />
-                      <span className="text-xs font-bold text-white">
-                        {selectedAmbulance.name}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                      {selectedAmbulance.id} • AVAILABLE
-                    </span>
+              {/* Available Ambulances Section (Sections 2, 4, 5 & 23) */}
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-red-500" />
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                      Available Ambulances
+                    </h4>
                   </div>
-                  <p className="text-[11px] text-slate-400">
-                    Pilot: {selectedAmbulance.driverName} • Nearby Emergency Unit
-                  </p>
+                  <button
+                    type="button"
+                    onClick={autoAssignNearestAmbulance}
+                    className="px-2.5 py-1 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 font-bold text-[10px] transition-colors"
+                  >
+                    AUTO-ASSIGN NEAREST
+                  </button>
                 </div>
-              )}
+                <p className="text-[10px] text-slate-400">
+                  Demo fleet units stationed near pickup location.
+                </p>
 
-              {/* Dispatch Action Button */}
+                <div className="space-y-2">
+                  {availableAmbulances.map(amb => {
+                    const isSelected = selectedAmbulance?.id === amb.id;
+                    return (
+                      <div
+                        key={amb.id}
+                        onClick={() => assignAmbulance(amb)}
+                        className={`cursor-pointer p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? 'bg-slate-900 border-red-500 shadow-md ring-1 ring-red-500/30'
+                            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-black text-white">{amb.id}</span>
+                            <span className="text-[11px] font-bold text-slate-200">{amb.type || amb.name}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {amb.distanceKm} km away • ~{amb.etaMinutes} min to pickup
+                          </p>
+                          <span className={`inline-block mt-1 text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                            isSelected
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {isSelected ? 'ASSIGNED' : 'AVAILABLE'}
+                          </span>
+                        </div>
+
+                        <div>
+                          {isSelected ? (
+                            <span className="px-3 py-1.5 rounded-lg bg-red-600 text-white font-extrabold text-[11px] flex items-center gap-1 shadow">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>SELECTED</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); assignAmbulance(amb); }}
+                              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-[11px] border border-slate-700 transition-colors"
+                            >
+                              SELECT
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Dispatch Action Button: Stage 1 Start */}
               <button
                 onClick={handleLaunchEmergency}
                 className="w-full py-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-red-600/30 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
                 <ShieldAlert className="w-5 h-5 animate-pulse" />
-                <span>BOOK AMBULANCE & ACTIVATE CORRIDOR</span>
+                <span>DISPATCH {selectedAmbulance?.id || 'AMBULANCE'} TO PICKUP</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 

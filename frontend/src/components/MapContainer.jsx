@@ -29,6 +29,7 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
     currentCoords, 
     nodes, 
     selectedAmbulance, 
+    availableAmbulances = [],
     selectedHospital, 
     nearbyHospitals = [],
     selectHospitalById,
@@ -36,6 +37,9 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
     isSimulating,
     currentSpeedKmh,
     simulationIndex,
+    tripStage,
+    tripStatus,
+    corridorStatus,
     operatingMode,
     toggleOperatingMode,
     mapEngine,
@@ -75,6 +79,27 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
     `,
     iconSize: [40, 40],
     iconAnchor: [20, 20]
+  });
+
+  const availableAmbulanceIcon = (id) => L.divIcon({
+    className: `custom-amb-avail-${id}`,
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -50%);">
+        <div style="position: relative; width: 28px; height: 28px; border-radius: 9999px; background: #0284c7; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.6); display: flex; align-items: center; justify-content: center; color: white;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v9c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>
+        <div style="margin-top: 2px; background: #0f172a; color: #38bdf8; border: 1px solid #0284c7; padding: 1px 5px; border-radius: 4px; font-size: 8.5px; font-weight: 800; white-space: nowrap;">
+          ${id} • AVAILABLE
+        </div>
+      </div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
   });
 
   const realGpsUserIcon = L.divIcon({
@@ -188,11 +213,15 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
       {/* Clean Telemetry Header */}
       <div className="bg-slate-900/90 backdrop-blur-md px-4 py-2 border-b border-slate-800 flex items-center justify-between z-10 text-xs">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="font-mono font-bold text-slate-300">PUNE CORRIDOR NETWORK • ACTIVE</span>
+          <span className={`w-2 h-2 rounded-full ${tripStage === 'HOSPITAL_STAGE' && corridorStatus === 'ACTIVE' ? 'bg-red-500 animate-ping' : 'bg-blue-400'}`} />
+          <span className="font-mono font-bold text-slate-300">
+            {tripStage === 'PICKUP_STAGE'
+              ? (tripStatus === 'ARRIVED_AT_PICKUP' ? 'PICKUP REACHED • PATIENT BOARDING' : 'AMBULANCE EN ROUTE TO PICKUP • CORRIDOR STANDBY')
+              : (tripStatus === 'ARRIVED_AT_HOSPITAL' ? 'DESTINATION REACHED • CORRIDOR RELEASED' : 'EMERGENCY CORRIDOR • GREEN WAVE ACTIVE')}
+          </span>
         </div>
         <div className="text-[11px] font-mono text-slate-400">
-          Live Speed: <strong className="text-white">{currentSpeedKmh || 48} km/h</strong>
+          Simulated Speed: <strong className="text-white">{currentSpeedKmh} km/h</strong>
         </div>
       </div>
 
@@ -258,8 +287,8 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
                 </AdvancedMarker>
               )}
 
-              {/* Corridor Signal Nodes */}
-              {nodes.map(node => (
+              {/* Corridor Signal Nodes: Only active during hospital emergency journey */}
+              {tripStage === 'HOSPITAL_STAGE' && nodes.map(node => (
                 <AdvancedMarker 
                   key={node.id} 
                   position={{ lat: node.location.lat, lng: node.location.lng }}
@@ -410,8 +439,29 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
               </Marker>
             )}
 
-            {/* Corridor Junction Nodes */}
-            {nodes.map(node => (
+            {/* Available Nearby Ambulances (Stage 1 Standby) */}
+            {tripStage === 'PICKUP_STAGE' && availableAmbulances
+              .filter(a => a.id !== selectedAmbulance?.id)
+              .map(amb => (
+                <Marker 
+                  key={amb.id} 
+                  position={[amb.lat, amb.lng]} 
+                  icon={availableAmbulanceIcon(amb.id)}
+                >
+                  <Popup>
+                    <div className="p-1">
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold">
+                        {amb.id} • AVAILABLE
+                      </span>
+                      <h4 className="text-xs font-bold text-white mt-1">{amb.name}</h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5">{amb.distanceKm} km away • ~{amb.etaMinutes} min to pickup</p>
+                    </div>
+                  </Popup>
+                </Marker>
+            ))}
+
+            {/* Corridor Junction Nodes: Only active during hospital emergency journey */}
+            {tripStage === 'HOSPITAL_STAGE' && nodes.map(node => (
               <Marker 
                 key={node.id} 
                 position={[node.location.lat, node.location.lng]} 
@@ -441,7 +491,7 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
                 <div className="p-1">
                   <div className="flex items-center gap-1.5 text-red-400 font-extrabold text-xs">
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                    ACTIVE AMBULANCE EN ROUTE
+                    <span>{tripStage === 'PICKUP_STAGE' ? 'AMBULANCE TO PICKUP' : 'AMBULANCE TO HOSPITAL'}</span>
                   </div>
                   <p className="text-xs font-bold text-white mt-1">{selectedAmbulance?.name}</p>
                   <p className="text-[11px] text-slate-300">Reg: {selectedAmbulance?.vehicleNumber}</p>
@@ -451,25 +501,27 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
           </LeafletMap>
         )}
 
-        {/* Floating Signal Status Key */}
-        <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2.5 rounded-2xl shadow-xl text-xs space-y-1.5 pointer-events-auto hidden sm:block">
-          <div className="font-bold text-[10px] text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between gap-2">
-            <span>Corridor Signals</span>
-            <span className="font-mono text-emerald-400">V2X SYNC</span>
+        {/* Floating Signal Status Key: Only displayed during Stage 2 corridor activation */}
+        {tripStage === 'HOSPITAL_STAGE' && (
+          <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2.5 rounded-2xl shadow-xl text-xs space-y-1.5 pointer-events-auto hidden sm:block">
+            <div className="font-bold text-[10px] text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between gap-2">
+              <span>Corridor Signals</span>
+              <span className="font-mono text-emerald-400">V2X SYNC</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              <span className="text-slate-200 font-medium text-[11px]">Junction Active (Preempted Green)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span className="text-slate-200 font-medium text-[11px]">Junction Preparing (Warning Lights)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span className="text-slate-200 font-medium text-[11px]">Junction Passed (Normal Cycle)</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-            <span className="text-slate-200 font-medium text-[11px]">Junction Active (Preempted Green)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            <span className="text-slate-200 font-medium text-[11px]">Junction Preparing (Warning Lights)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <span className="text-slate-200 font-medium text-[11px]">Junction Passed (Normal Cycle)</span>
-          </div>
-        </div>
+        )}
 
       </div>
     </div>

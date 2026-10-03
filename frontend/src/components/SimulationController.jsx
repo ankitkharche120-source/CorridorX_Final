@@ -14,10 +14,12 @@ export const SimulationController = () => {
     currentSpeedKmh,
     distanceRemainingKm,
     etaSeconds,
+    tripStage,
     tripStatus
   } = useEmergency();
 
-  const isArrived = tripStatus === 'ARRIVED' || tripStatus === 'COMPLETED';
+  const isPickupPhase = tripStage === 'PICKUP_STAGE';
+  const isArrived = tripStatus === 'ARRIVED_AT_HOSPITAL' || tripStatus === 'COMPLETED' || tripStatus === 'ARRIVED';
 
   const formattedEta = () => {
     if (isArrived) return '00:00';
@@ -62,7 +64,11 @@ export const SimulationController = () => {
               title="Start / Resume Ambulance Journey"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isArrived ? 'REPLAY' : 'START SIMULATION'}</span>
+              <span>
+                {isArrived 
+                  ? 'REPLAY' 
+                  : (isPickupPhase ? 'DRIVE TO PICKUP' : 'START CORRIDOR')}
+              </span>
             </button>
           )}
 
@@ -78,7 +84,7 @@ export const SimulationController = () => {
           <button
             onClick={resetSimulation}
             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all text-xs font-semibold"
-            title="Reset to Pickup Point"
+            title="Reset Current Leg"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -105,7 +111,7 @@ export const SimulationController = () => {
       {/* Telemetry Metric Gauges */}
       <div className="grid grid-cols-3 gap-3 mt-3 pt-1">
         
-        {/* Simulated Speed (Section 14) */}
+        {/* Simulated Speed */}
         <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
           <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
             <Gauge className="w-3.5 h-3.5 text-blue-400" />
@@ -121,7 +127,7 @@ export const SimulationController = () => {
         <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
           <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
             <Navigation className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Distance Left</span>
+            <span>{isPickupPhase ? 'Dist to Pickup' : 'Dist to Hospital'}</span>
           </div>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-xl font-mono font-black text-white">{distanceRemainingKm}</span>
@@ -129,11 +135,11 @@ export const SimulationController = () => {
           </div>
         </div>
 
-        {/* Corridor ETA */}
+        {/* ETA */}
         <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
           <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
             <Clock className="w-3.5 h-3.5 text-red-400" />
-            <span>Corridor ETA</span>
+            <span>{isPickupPhase ? 'ETA to Pickup' : 'Hospital ETA'}</span>
           </div>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-xl font-mono font-black text-red-400">{formattedEta()}</span>
