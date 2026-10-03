@@ -34,7 +34,7 @@ export const EmergencyProvider = ({ children }) => {
   });
 
   // User Profile Data (Section 2: Clearly labeled DEMO PROFILE)
-  const [userName, setUserName] = useState(() => sessionStorage.getItem('corridorx_user_name') || 'Ankit Sharma');
+  const [userName, setUserName] = useState(() => sessionStorage.getItem('corridorx_user_name') || 'Rahul Sharma');
   const [userPhone, setUserPhone] = useState(() => sessionStorage.getItem('corridorx_user_phone') || '9999999999');
 
   // Driver Location Mode: 'DEMO' | 'REAL_GPS'
@@ -51,7 +51,7 @@ export const EmergencyProvider = ({ children }) => {
 
   // Emergency Request State — NO hardcoded Karvenagar/Pune coordinates
   const [emergencyRequest, setEmergencyRequest] = useState({
-    patientName: 'Ankit Sharma',
+    patientName: 'Rahul Sharma',
     contactNumber: '9999999999',
     emergencyType: 'Chest Pain / Acute Cardiac Emergency',
     pickupLocation: '',

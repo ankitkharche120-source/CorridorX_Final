@@ -47,7 +47,7 @@ export const CustomerDashboard = () => {
   } = useEmergency();
 
   // Demo Profile Inputs (Section 2: Clearly labeled DEMO PROFILE)
-  const [profileName, setProfileName] = useState(userName || 'Ankit Sharma');
+  const [profileName, setProfileName] = useState(userName || 'Rahul Sharma');
   const [profilePhone, setProfilePhone] = useState(userPhone || '9999999999');
   const [profileEmergencyType, setProfileEmergencyType] = useState(
     emergencyRequest.emergencyType || 'Chest Pain / Acute Cardiac Emergency'

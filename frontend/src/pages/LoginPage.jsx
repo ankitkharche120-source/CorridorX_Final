@@ -26,7 +26,7 @@ export const LoginPage = () => {
   const [activeRole, setActiveRole] = useState('CUSTOMER');
 
   // Customer Demo Profile Inputs
-  const [customerName, setCustomerName] = useState('Ankit Sharma');
+  const [customerName, setCustomerName] = useState('Rahul Sharma');
   const [customerPhone, setCustomerPhone] = useState('9999999999');
   const [emergencyType, setEmergencyType] = useState('Chest Pain / Acute Cardiac Emergency');
 
