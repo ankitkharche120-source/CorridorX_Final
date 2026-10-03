@@ -472,45 +472,6 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
         </div>
 
       </div>
-
-      {/* Section 25: Mandatory Data Source Status Bar */}
-      <div className="bg-slate-950 px-4 py-2 border-t border-slate-800 text-[10px] font-mono flex flex-wrap items-center justify-between gap-2 text-slate-400">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="flex items-center gap-1 text-slate-300 font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            MAP: <strong className="text-white">{mapEngine === 'google' ? 'GOOGLE MAPS' : 'LEAFLET/OSM'}</strong>
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${liveLocation.location ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-            GPS: <strong className={liveLocation.location ? 'text-emerald-400' : 'text-amber-400'}>{liveLocation.location ? 'LIVE (±' + Math.round(liveLocation.accuracy || 10) + 'm)' : 'STANDBY'}</strong>
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            HOSPITALS: <strong className="text-emerald-400">LIVE DATA ({nearbyHospitals.length})</strong>
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            ROUTE: <strong className="text-emerald-400">{calculatedRoute ? 'LIVE ROAD ROUTE' : 'LIVE COMPUTE'}</strong>
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            AMBULANCE: <strong className="text-amber-400">DEMO FLEET</strong>
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            CORRIDOR: <strong className="text-amber-400">SIMULATION ENGINE</strong>
-          </span>
-        </div>
-        <div className="text-slate-500 hidden md:block">
-          CORRIDORX NATIONAL EMS
-        </div>
-      </div>
-
     </div>
   );
 };

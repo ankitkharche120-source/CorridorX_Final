@@ -28,8 +28,14 @@ export const Navbar = () => {
     driverDutyStatus, 
     toggleDriverDuty,
     isSimulating,
-    etaMinutes 
+    etaMinutes,
+    isAuthenticated
   } = useEmergency();
+
+  // SECTION 4: DO NOT show authenticated navigation before login or on /login
+  if (!isAuthenticated || location.pathname === '/login') {
+    return null;
+  }
 
   const isDriver = currentUserRole === 'AMBULANCE';
 

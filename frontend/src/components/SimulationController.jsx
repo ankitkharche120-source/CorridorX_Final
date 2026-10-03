@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEmergency } from '../context/EmergencyContext';
-import { Play, Pause, RotateCcw, FastForward, Navigation, Gauge, Clock, ShieldAlert } from 'lucide-react';
+import { Play, Pause, RotateCcw, FastForward, Navigation, Gauge, Clock } from 'lucide-react';
 
 export const SimulationController = () => {
   const {
@@ -13,14 +13,14 @@ export const SimulationController = () => {
     setSimulationSpeedMultiplier,
     currentSpeedKmh,
     distanceRemainingKm,
-    etaMinutes,
     etaSeconds,
-    goldenHourMinutesRemaining,
-    simulationIndex,
     tripStatus
   } = useEmergency();
 
+  const isArrived = tripStatus === 'ARRIVED' || tripStatus === 'COMPLETED';
+
   const formattedEta = () => {
+    if (isArrived) return '00:00';
     const mins = Math.floor(etaSeconds / 60);
     const secs = etaSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -36,10 +36,10 @@ export const SimulationController = () => {
           </div>
           <div>
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
-              Live Corridor Telemetry & Simulator
+              Corridor Telemetry & Simulator
             </h4>
             <p className="text-[11px] text-slate-400">
-              Eureka Judge Control Bar • Real-time Node Handover
+              Real-time Node Handover • Dynamic Preemption
             </p>
           </div>
         </div>
@@ -58,17 +58,17 @@ export const SimulationController = () => {
           ) : (
             <button
               onClick={startSimulation}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-md shadow-red-600/30 animate-pulse"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-md shadow-red-600/30"
               title="Start / Resume Ambulance Journey"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{tripStatus === 'ARRIVED' ? 'REPLAY' : 'START SIMULATION'}</span>
+              <span>{isArrived ? 'REPLAY' : 'START SIMULATION'}</span>
             </button>
           )}
 
           <button
             onClick={stepForwardSimulation}
-            disabled={isSimulating}
+            disabled={isSimulating || isArrived}
             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 border border-slate-700 transition-all text-xs font-semibold"
             title="Step Forward 1 Waypoint"
           >
@@ -102,14 +102,14 @@ export const SimulationController = () => {
         </div>
       </div>
 
-      {/* Telemetry Metric Gauges (Ola/Uber + Emergency Dashboard Style) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-1">
+      {/* Telemetry Metric Gauges */}
+      <div className="grid grid-cols-3 gap-3 mt-3 pt-1">
         
-        {/* Speed */}
+        {/* Simulated Speed (Section 14) */}
         <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
           <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
             <Gauge className="w-3.5 h-3.5 text-blue-400" />
-            <span>Telemetry Speed</span>
+            <span>Simulated Speed</span>
           </div>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-xl font-mono font-black text-white">{currentSpeedKmh}</span>
@@ -137,19 +137,6 @@ export const SimulationController = () => {
           </div>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-xl font-mono font-black text-red-400">{formattedEta()}</span>
-            <span className="text-xs text-slate-400 font-semibold">min</span>
-          </div>
-        </div>
-
-        {/* Golden Hour Window */}
-        <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
-          <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-medium">
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-            <span>Golden Hour</span>
-          </div>
-          <div className="mt-1 flex items-baseline gap-1">
-            <span className="text-xl font-mono font-black text-amber-300">{goldenHourMinutesRemaining}</span>
-            <span className="text-xs text-slate-400 font-semibold">/ 60m left</span>
           </div>
         </div>
 
@@ -157,3 +144,5 @@ export const SimulationController = () => {
     </div>
   );
 };
+
+export default SimulationController;

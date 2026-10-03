@@ -60,7 +60,7 @@ export const HospitalSelectionPage = () => {
           distanceKm: p.distanceKm || 3.5,
           etaMinutes: p.etaMinutes || Math.max(3, Math.round((p.distanceKm || 3.5) * 2.2)),
           phone: p.phone || '+91 108 Emergency Desk',
-          icu_beds: p.icu_beds || 8,
+          status: 'Emergency Department Available',
           specialties: p.specialties || ['Emergency Trauma', 'Cardiac Resuscitation'],
           source: p.source || 'VERIFIED_NETWORK'
         }));
@@ -109,7 +109,7 @@ export const HospitalSelectionPage = () => {
           distanceKm: p.distanceKm || 5.0,
           etaMinutes: Math.max(3, Math.round((p.distanceKm || 5.0) * 2.2)),
           phone: p.phone || '+91 108 Emergency Desk',
-          icu_beds: p.icu_beds || 10,
+          status: 'Emergency Department Available',
           specialties: p.specialties || ['Emergency Trauma'],
           source: p.source || 'SEARCH_RESULT'
         }));
@@ -344,7 +344,7 @@ export const HospitalSelectionPage = () => {
           <div className="py-16 text-center space-y-3 bg-slate-900/40 border border-slate-800 rounded-3xl">
             <Loader2 className="w-8 h-8 text-red-500 animate-spin mx-auto" />
             <p className="text-sm font-bold text-slate-300">Searching emergency trauma centers across India...</p>
-            <p className="text-xs text-slate-500">Checking nearest ICU beds, ventilator availability & emergency desks</p>
+            <p className="text-xs text-slate-500">Checking nearest emergency desks & verified trauma networks</p>
           </div>
         ) : (
           <div className="space-y-3.5">
@@ -393,7 +393,7 @@ export const HospitalSelectionPage = () => {
                       <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-300">
                         <div className="flex items-center gap-1 text-emerald-400 font-bold">
                           <Bed className="w-3.5 h-3.5" />
-                          <span>{hosp.icu_beds} ICU Beds Ready</span>
+                          <span>Emergency Services Available</span>
                         </div>
                         <span>•</span>
                         <div className="flex items-center gap-1 text-slate-400">

@@ -30,7 +30,8 @@ export const AmbulanceOperatorDashboard = () => {
     etaMinutes,
     driverLocationMode,
     setDriverLocationMode,
-    liveLocation
+    liveLocation,
+    resetDemo
   } = useEmergency();
 
   const [hasAccepted, setHasAccepted] = useState(true);
@@ -92,7 +93,21 @@ export const AmbulanceOperatorDashboard = () => {
 
             {/* Cockpit Actions */}
             <div className="flex flex-wrap items-center gap-2">
-              {!hasAccepted ? (
+              {tripStatus === 'ARRIVED' ? (
+                <>
+                  <span className="px-4 py-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>DELIVERY COMPLETE</span>
+                  </span>
+                  <button
+                    onClick={resetDemo}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
+                    <span>RESET TRIP</span>
+                  </button>
+                </>
+              ) : !hasAccepted ? (
                 <button
                   onClick={() => setHasAccepted(true)}
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg shadow-blue-600/30 transition-all"
@@ -155,11 +170,23 @@ export const AmbulanceOperatorDashboard = () => {
             {/* In-cockpit Telemetry Status */}
             <div className="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5">
-                <Radio className="w-4 h-4 text-red-500 animate-spin" />
-                <div>
-                  <span className="text-[10px] font-mono text-red-400 font-bold uppercase">TRAFFIC LIGHT OVERRIDE ACTIVE</span>
-                  <p className="text-slate-200 font-medium">Upcoming signals and roadside warning boards synced</p>
-                </div>
+                {tripStatus === 'ARRIVED' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <div>
+                      <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase">MISSION COMPLETED • CORRIDOR RELEASED</span>
+                      <p className="text-slate-300 font-medium">All traffic signals restored to regular cycle</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Radio className="w-4 h-4 text-red-500 animate-spin" />
+                    <div>
+                      <span className="text-[10px] font-mono text-red-400 font-bold uppercase">TRAFFIC LIGHT OVERRIDE ACTIVE</span>
+                      <p className="text-slate-200 font-medium">Upcoming signals and roadside warning boards synced</p>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="text-right font-mono">
                 <span className="text-sm font-black text-emerald-400">{currentSpeedKmh} KM/H</span>
@@ -223,15 +250,23 @@ export const AmbulanceOperatorDashboard = () => {
             </div>
 
             {/* ETA Countdown Tile */}
-            <div className="bg-red-950/40 border border-red-500/50 rounded-2xl p-4 text-center">
-              <span className="text-[10px] font-mono font-black text-red-400 uppercase tracking-widest block">
-                CORRIDOR ETA TO DESTINATION
+            <div className={`rounded-2xl p-4 text-center border ${
+              tripStatus === 'ARRIVED'
+                ? 'bg-emerald-950/40 border-emerald-500/50'
+                : 'bg-red-950/40 border-red-500/50'
+            }`}>
+              <span className={`text-[10px] font-mono font-black uppercase tracking-widest block ${
+                tripStatus === 'ARRIVED' ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {tripStatus === 'ARRIVED' ? 'DESTINATION REACHED' : 'CORRIDOR ETA TO DESTINATION'}
               </span>
               <div className="text-3xl font-mono font-black text-white mt-1">
-                {etaMinutes} min <span className="text-sm font-semibold text-slate-400">({distanceRemainingKm} km)</span>
+                {tripStatus === 'ARRIVED' ? '0 min' : `${etaMinutes} min`} <span className="text-sm font-semibold text-slate-400">({distanceRemainingKm} km)</span>
               </div>
               <p className="text-[11px] text-slate-300 mt-1">
-                Real-time road corridor synchronized with dynamic signal preemption.
+                {tripStatus === 'ARRIVED' 
+                  ? 'Patient delivered safely to trauma bay. All signals normalized.' 
+                  : 'Real-time road corridor synchronized with dynamic signal preemption.'}
               </p>
             </div>
 

@@ -54,14 +54,14 @@ export const ControlCenterPage = () => {
 
           <div className="flex items-center gap-2 font-mono text-xs">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span className={`w-2 h-2 rounded-full ${tripStatus === 'ARRIVED' ? 'bg-emerald-500' : 'bg-red-500 animate-ping'}`} />
               <span className="text-slate-400">TRIP:</span>
               <span className="text-white font-bold">{tripStatus}</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
               <Clock className="w-3.5 h-3.5 text-red-400" />
               <span className="text-slate-400">ETA:</span>
-              <span className="text-white font-bold">~{etaMinutes} min</span>
+              <span className="text-white font-bold">{tripStatus === 'ARRIVED' ? '0 min' : `~${etaMinutes} min`}</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
               <Gauge className="w-3.5 h-3.5 text-blue-400" />
@@ -149,13 +149,25 @@ export const ControlCenterPage = () => {
               </div>
 
               {/* Traffic Corridor Pre-emption Status */}
-              <div className="bg-red-950/30 border border-red-500/40 rounded-2xl p-3.5 text-xs space-y-1.5">
-                <div className="flex items-center gap-2 text-red-400 font-mono font-bold text-[10px] uppercase">
-                  <Radio className="w-3.5 h-3.5 animate-spin" />
-                  <span>SIMULATED GREEN WAVE ENGINE</span>
+              <div className={`rounded-2xl p-3.5 text-xs space-y-1.5 border ${
+                tripStatus === 'ARRIVED'
+                  ? 'bg-emerald-950/30 border-emerald-500/40'
+                  : 'bg-red-950/30 border-red-500/40'
+              }`}>
+                <div className={`flex items-center gap-2 font-mono font-bold text-[10px] uppercase ${
+                  tripStatus === 'ARRIVED' ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {tripStatus === 'ARRIVED' ? (
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  ) : (
+                    <Radio className="w-3.5 h-3.5 animate-spin" />
+                  )}
+                  <span>{tripStatus === 'ARRIVED' ? 'CORRIDOR RELEASED' : 'SIMULATED GREEN WAVE ENGINE'}</span>
                 </div>
                 <p className="text-slate-300 text-[11px]">
-                  {activeNodesCount > 0 
+                  {tripStatus === 'ARRIVED'
+                    ? 'Patient delivered safely to trauma bay. All traffic signals normalized.'
+                    : activeNodesCount > 0 
                     ? `${activeNodesCount} signal junctions actively clearing emergency lane.`
                     : 'Corridor in standby. Awaiting dispatch activation.'}
                 </p>
