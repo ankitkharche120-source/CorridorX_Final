@@ -83,26 +83,21 @@ export const LocationPicker = ({
   const [manualAddress, setManualAddress] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  // Selected location details
-  const [selectedLocation, setSelectedLocation] = useState(value || {
-    latitude: 18.5175,
-    longitude: 73.8401,
-    formattedAddress: 'Deccan Gymkhana, Pune, Maharashtra, India',
-    shortTitle: 'Deccan Gymkhana, Pune',
-    source: 'PRESET'
-  });
+  // Selected location details — Starts null unless passed, ensuring no hardcoded Karvenagar/Pune fallback
+  const [selectedLocation, setSelectedLocation] = useState(value || null);
 
   const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
   const [isGpsLoading, setIsGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!value);
 
   const debounceTimerRef = useRef(null);
 
   // Sync internal state when external value changes
   useEffect(() => {
-    if (value && (value.latitude !== selectedLocation.latitude || value.longitude !== selectedLocation.longitude)) {
+    if (value) {
       setSelectedLocation(value);
+      setIsEditing(false);
     }
   }, [value]);
 
@@ -615,27 +610,37 @@ export const LocationPicker = ({
 
               {/* Interactive Leaflet Map for Pin Placement */}
               <div className="w-full h-64 rounded-2xl overflow-hidden border border-slate-800 shadow-inner relative">
-                <LeafletMap
-                  center={[selectedLocation.latitude, selectedLocation.longitude]}
-                  zoom={14}
-                  scrollWheelZoom={true}
-                  style={{ height: '100%', width: '100%' }}
-                >
-                  <TileLayer
-                    attribution='&copy; OpenStreetMap'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <MapInteractiveEvents
-                    position={{ lat: selectedLocation.latitude, lng: selectedLocation.longitude }}
-                    onLocationSelected={handleMapPinMoved}
-                  />
-                  <Marker
-                    position={[selectedLocation.latitude, selectedLocation.longitude]}
-                    draggable={true}
-                    eventHandlers={markerEventHandlers}
-                    icon={createDraggablePinIcon()}
-                  />
-                </LeafletMap>
+                {(() => {
+                  const mapLat = selectedLocation?.latitude ?? (liveLocation.location?.lat ?? 20.5937);
+                  const mapLng = selectedLocation?.longitude ?? (liveLocation.location?.lng ?? 78.9629);
+                  const mapZoom = selectedLocation?.latitude ? 14 : (liveLocation.location ? 14 : 5);
+
+                  return (
+                    <LeafletMap
+                      center={[mapLat, mapLng]}
+                      zoom={mapZoom}
+                      scrollWheelZoom={true}
+                      style={{ height: '100%', width: '100%' }}
+                    >
+                      <TileLayer
+                        attribution='&copy; OpenStreetMap'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <MapInteractiveEvents
+                        position={selectedLocation ? { lat: selectedLocation.latitude, lng: selectedLocation.longitude } : null}
+                        onLocationSelected={handleMapPinMoved}
+                      />
+                      {selectedLocation && (
+                        <Marker
+                          position={[selectedLocation.latitude, selectedLocation.longitude]}
+                          draggable={true}
+                          eventHandlers={markerEventHandlers}
+                          icon={createDraggablePinIcon()}
+                        />
+                      )}
+                    </LeafletMap>
+                  );
+                })()}
 
                 {/* Floating Map Instruction Card */}
                 <div className="absolute bottom-2 left-2 right-2 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2 rounded-xl text-center shadow-lg pointer-events-none">
@@ -643,7 +648,7 @@ export const LocationPicker = ({
                     {isReverseGeocoding ? (
                       <span className="text-amber-400 animate-pulse">Resolving Indian postal address...</span>
                     ) : (
-                      selectedLocation.formattedAddress
+                      selectedLocation?.formattedAddress || 'Click anywhere on map of India to set emergency pickup point'
                     )}
                   </p>
                 </div>
@@ -651,15 +656,17 @@ export const LocationPicker = ({
 
               <div className="flex items-center justify-between text-xs pt-1">
                 <span className="text-slate-500 font-mono">
-                  {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
+                  {selectedLocation ? `${selectedLocation.latitude.toFixed(5)}, ${selectedLocation.longitude.toFixed(5)}` : 'No point chosen yet'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-colors"
-                >
-                  Use This Map Point
-                </button>
+                {selectedLocation && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-colors"
+                  >
+                    Use This Map Point
+                  </button>
+                )}
               </div>
             </div>
           )}

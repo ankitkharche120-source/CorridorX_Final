@@ -27,7 +27,10 @@ export const AmbulanceOperatorDashboard = () => {
     stepForwardSimulation,
     currentSpeedKmh,
     distanceRemainingKm,
-    etaMinutes
+    etaMinutes,
+    driverLocationMode,
+    setDriverLocationMode,
+    liveLocation
   } = useEmergency();
 
   const [hasAccepted, setHasAccepted] = useState(true);
@@ -58,52 +61,82 @@ export const AmbulanceOperatorDashboard = () => {
             </div>
           </div>
 
-          {/* Cockpit Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            {!hasAccepted ? (
+          {/* Section 21: Location Source Toggle [ REAL GPS ] vs [ DEMO SIMULATION ] */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex items-center text-xs">
               <button
-                onClick={() => setHasAccepted(true)}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg shadow-blue-600/30 transition-all"
+                type="button"
+                onClick={() => setDriverLocationMode('REAL_GPS')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all ${
+                  driverLocationMode === 'REAL_GPS'
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
               >
-                ACCEPT EMERGENCY TRIP
+                <Radio className={`w-3.5 h-3.5 ${driverLocationMode === 'REAL_GPS' ? 'animate-pulse text-blue-200' : ''}`} />
+                <span>REAL GPS {liveLocation.location ? `(±${Math.round(liveLocation.accuracy || 10)}m)` : ''}</span>
               </button>
-            ) : (
-              <>
-                {isSimulating ? (
-                  <button
-                    onClick={pauseSimulation}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg transition-all"
-                  >
-                    <Pause className="w-4 h-4" />
-                    <span>PAUSE JOURNEY</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={startSimulation}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all"
-                  >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>START JOURNEY</span>
-                  </button>
-                )}
 
-                <button
-                  onClick={stepForwardSimulation}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-colors"
-                  title="Simulate Next Coordinate"
-                >
-                  <RefreshCw className="w-4 h-4 text-blue-400" />
-                </button>
+              <button
+                type="button"
+                onClick={() => setDriverLocationMode('DEMO')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all ${
+                  driverLocationMode === 'DEMO'
+                    ? 'bg-amber-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>DEMO ROUTE</span>
+              </button>
+            </div>
 
+            {/* Cockpit Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              {!hasAccepted ? (
                 <button
-                  onClick={handleArrival}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-600/30 transition-all"
+                  onClick={() => setHasAccepted(true)}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg shadow-blue-600/30 transition-all"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>ARRIVED AT HOSPITAL</span>
+                  ACCEPT EMERGENCY TRIP
                 </button>
-              </>
-            )}
+              ) : (
+                <>
+                  {isSimulating ? (
+                    <button
+                      onClick={pauseSimulation}
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg transition-all"
+                    >
+                      <Pause className="w-4 h-4" />
+                      <span>PAUSE JOURNEY</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={startSimulation}
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>START JOURNEY</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={stepForwardSimulation}
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-colors"
+                    title="Simulate Next Coordinate"
+                  >
+                    <RefreshCw className="w-4 h-4 text-blue-400" />
+                  </button>
+
+                  <button
+                    onClick={handleArrival}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs shadow-lg shadow-red-600/30 transition-all"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>ARRIVED AT HOSPITAL</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -173,7 +206,7 @@ export const AmbulanceOperatorDashboard = () => {
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase">Pickup Location</span>
-                  <p className="text-slate-200 font-medium">{emergencyRequest.pickupLocation}</p>
+                  <p className="text-slate-200 font-medium">{emergencyRequest.pickupLocation || 'Awaiting selection'}</p>
                 </div>
               </div>
 
@@ -181,9 +214,9 @@ export const AmbulanceOperatorDashboard = () => {
                 <Hospital className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase">Pre-registered Hospital</span>
-                  <p className="text-white font-bold">{selectedHospital?.name}</p>
+                  <p className="text-white font-bold">{selectedHospital?.name || 'Nearest Trauma Hospital'}</p>
                   <p className="text-[11px] text-emerald-400 mt-0.5">
-                    Trauma Bay Ready • Helpline: {selectedHospital?.emergencyHelpline}
+                    Trauma Bay Ready • Helpline: {selectedHospital?.emergencyHelpline || '+91 112'}
                   </p>
                 </div>
               </div>
@@ -198,7 +231,7 @@ export const AmbulanceOperatorDashboard = () => {
                 {etaMinutes} min <span className="text-sm font-semibold text-slate-400">({distanceRemainingKm} km)</span>
               </div>
               <p className="text-[11px] text-slate-300 mt-1">
-                Signals green-lit along Karve Road Corridor.
+                Real-time road corridor synchronized with dynamic signal preemption.
               </p>
             </div>
 

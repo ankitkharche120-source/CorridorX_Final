@@ -4,8 +4,15 @@ const { ambulanceProvider, isLiveFleetConnected } = require('../services/ambulan
 
 exports.getNearbyAmbulances = async (req, res) => {
   try {
-    const lat = parseFloat(req.query.lat) || 18.5074;
-    const lng = parseFloat(req.query.lng) || 73.8065;
+    if (!req.query.lat || !req.query.lng) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected pickup coordinates (lat, lng) are required to generate local ambulances.'
+      });
+    }
+
+    const lat = parseFloat(req.query.lat);
+    const lng = parseFloat(req.query.lng);
     const emergencyType = req.query.emergency_type || '';
     const radius = parseFloat(req.query.radius) || 25;
 

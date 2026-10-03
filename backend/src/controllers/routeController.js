@@ -56,11 +56,15 @@ exports.computeEmergencyRoute = async (req, res) => {
     const { origin, destination, intermediates = [], alternatives = true } = req.body;
 
     if (!origin || !destination) {
+      console.log('[ROUTE CALCULATION] ROUTE RESULT: ERROR - Missing origin/destination');
       return res.status(400).json({
         success: false,
         message: 'Origin and destination coordinates are required.'
       });
     }
+
+    console.log('[ROUTE CALCULATION] ORIGIN:', `${origin.latitude}, ${origin.longitude}`);
+    console.log('[ROUTE CALCULATION] DESTINATION:', `${destination.latitude}, ${destination.longitude}`);
 
     const apiKey = process.env.GOOGLE_ROUTES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
 
@@ -131,6 +135,7 @@ exports.computeEmergencyRoute = async (req, res) => {
               };
             });
 
+            console.log('[ROUTE CALCULATION] ROUTE RESULT: SUCCESS (GOOGLE_ROUTES_API), Distance:', `${formattedRoutes[0].distanceKm}km`, 'ETA:', `${formattedRoutes[0].etaMinutes}min`);
             return res.status(200).json({
               success: true,
               source: 'GOOGLE_ROUTES_API',
@@ -188,6 +193,7 @@ exports.computeEmergencyRoute = async (req, res) => {
             pathPoints: sampledPoints
           };
 
+          console.log('[ROUTE CALCULATION] ROUTE RESULT: SUCCESS (LIVE_OSRM_ROAD_ROUTING), Distance:', `${osrmRoute.distanceKm}km`, 'ETA:', `${osrmRoute.etaMinutes}min`);
           return res.status(200).json({
             success: true,
             source: 'LIVE_OSRM_ROAD_ROUTING',

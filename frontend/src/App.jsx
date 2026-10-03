@@ -16,6 +16,42 @@ import { AmbulanceOperatorDashboard } from './pages/AmbulanceOperatorDashboard';
 import { HospitalDashboardPage } from './pages/HospitalDashboardPage';
 import { QREmergencyPage } from './pages/QREmergencyPage';
 
+import { ControlCenterPage } from './pages/ControlCenterPage';
+import { useEmergency } from './context/EmergencyContext';
+
+// Protected Route Wrapper ensuring unauthenticated visitors go to /login first
+function ProtectedRoute({ children, allowedRoles }) {
+  const { isAuthenticated, currentUserRole } = useEmergency();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(currentUserRole)) {
+    // Redirect to user's assigned role home
+    if (currentUserRole === 'AMBULANCE') return <Navigate to="/ambulance" replace />;
+    if (currentUserRole === 'HOSPITAL') return <Navigate to="/hospital" replace />;
+    if (currentUserRole === 'CONTROL_CENTER') return <Navigate to="/control-center" replace />;
+    return <Navigate to="/customer" replace />;
+  }
+
+  return children;
+}
+
+// Root Route Redirector
+function RootRoute() {
+  const { isAuthenticated, currentUserRole } = useEmergency();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (currentUserRole === 'AMBULANCE') return <Navigate to="/ambulance" replace />;
+  if (currentUserRole === 'HOSPITAL') return <Navigate to="/hospital" replace />;
+  if (currentUserRole === 'CONTROL_CENTER') return <Navigate to="/control-center" replace />;
+  return <Navigate to="/customer" replace />;
+}
+
 export function App() {
   return (
     <EmergencyProvider>
@@ -24,17 +60,63 @@ export function App() {
           <Navbar />
           <main className="flex-grow">
             <Routes>
-              <Route path="/" element={<LandingPage />} />
+              {/* Root opens login page first if not authenticated */}
+              <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/customer" element={<CustomerDashboard />} />
-              <Route path="/customer/request" element={<EmergencyRequestPage />} />
-              <Route path="/customer/ambulances" element={<AvailableAmbulancesPage />} />
-              <Route path="/customer/hospitals" element={<HospitalSelectionPage />} />
-              <Route path="/customer/emergency" element={<ActiveEmergencyPage />} />
-              <Route path="/ambulance" element={<AmbulanceOperatorDashboard />} />
-              <Route path="/hospital" element={<HospitalDashboardPage />} />
+              <Route path="/landing" element={<LandingPage />} />
+
+              {/* Customer Routes (Protected) */}
+              <Route path="/customer" element={
+                <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                  <CustomerDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/customer/request" element={
+                <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                  <EmergencyRequestPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/customer/ambulances" element={
+                <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                  <AvailableAmbulancesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/customer/hospitals" element={
+                <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                  <HospitalSelectionPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/customer/emergency" element={
+                <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                  <ActiveEmergencyPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Ambulance Pilot Cockpit (Protected) */}
+              <Route path="/ambulance" element={
+                <ProtectedRoute allowedRoles={['AMBULANCE']}>
+                  <AmbulanceOperatorDashboard />
+                </ProtectedRoute>
+              } />
+
+              {/* Hospital Trauma Intake (Protected) */}
+              <Route path="/hospital" element={
+                <ProtectedRoute allowedRoles={['HOSPITAL']}>
+                  <HospitalDashboardPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Control Center Dashboard (Protected) */}
+              <Route path="/control-center" element={
+                <ProtectedRoute allowedRoles={['CONTROL_CENTER']}>
+                  <ControlCenterPage />
+                </ProtectedRoute>
+              } />
+
+              {/* QR Emergency Access (Public emergency QR scan on ambulance side) */}
               <Route path="/qr-emergency" element={<QREmergencyPage />} />
               <Route path="/qr-emergency/:ambulanceId" element={<QREmergencyPage />} />
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

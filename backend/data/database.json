@@ -46,8 +46,8 @@
       "rating": 4.9,
       "type": "ALS (Advanced Cardiac ICU)",
       "equipment_json": "[\"Ventilator\",\"Defibrillator\",\"Multi-para Monitor\",\"Oxygen Cylinder\",\"Spine Board\"]",
-      "latitude": 18.5265,
-      "longitude": 73.8511,
+      "latitude": 18.49038685811193,
+      "longitude": 73.81145749349916,
       "address": "Near Nal Stop Flyover, Karve Road, Pune",
       "status": "AVAILABLE",
       "qr_token": "CORRIDORX-QR-AMB-102",
@@ -64,7 +64,10 @@
       "isDemoFleet": true,
       "fleetBadge": "DEMO FLEET • Simulated for Demonstration",
       "source": "DEMO_AMBULANCE_PROVIDER",
-      "updated_at": "2026-10-03T08:16:00.341Z"
+      "updated_at": "2026-10-03T08:20:51.689Z",
+      "heading": null,
+      "speed_kmh": 54,
+      "last_telemetry_time": 1791015651687
     },
     {
       "id": "AMB-205",
@@ -413,7 +416,10 @@
       "distance_km": 2.1,
       "speed_kmh": 58,
       "current_junction": "Nal Stop Flyover",
-      "notes": "Severe chest tightness radiating to left arm. Conscious."
+      "notes": "Severe chest tightness radiating to left arm. Conscious.",
+      "distanceMeters": 2256,
+      "etaSeconds": 153,
+      "updated_at": "2026-10-03T08:20:51.695Z"
     },
     {
       "id": "TRIP-CX-8839",
@@ -478,7 +484,32 @@
   ],
   "customers": [],
   "drivers": [],
-  "locations": [],
+  "locations": [
+    {
+      "id": "LOC-1791015645378-365",
+      "ambulance_id": "AMB-102",
+      "trip_id": "TRIP-CX-8841",
+      "latitude": 18.490767219052305,
+      "longitude": 73.81065531397071,
+      "accuracy": 104,
+      "heading": null,
+      "speed_kmh": 54,
+      "timestamp": "2026-10-03T08:20:45.374Z",
+      "created_at": "2026-10-03T08:20:45.378Z"
+    },
+    {
+      "id": "LOC-1791015651690-922",
+      "ambulance_id": "AMB-102",
+      "trip_id": "TRIP-CX-8841",
+      "latitude": 18.49038685811193,
+      "longitude": 73.81145749349916,
+      "accuracy": 95,
+      "heading": null,
+      "speed_kmh": 54,
+      "timestamp": "2026-10-03T08:20:51.687Z",
+      "created_at": "2026-10-03T08:20:51.690Z"
+    }
+  ],
   "corridor_nodes": [
     {
       "id": "NODE-01",
@@ -487,10 +518,11 @@
       "name": "Karve Road / Kothrud Stand Junction",
       "latitude": 18.5065,
       "longitude": 73.8118,
-      "status": "ACTIVE",
+      "status": "STANDBY",
       "traffic_density": "HEAVY (Peak Congestion)",
       "large_board_id": "BOARD-L-01",
-      "small_board_id": "BOARD-S-01"
+      "small_board_id": "BOARD-S-01",
+      "updated_at": "2026-10-03T08:20:45.386Z"
     },
     {
       "id": "NODE-02",
@@ -499,10 +531,11 @@
       "name": "Nal Stop Flyover & Metro Gantry",
       "latitude": 18.5088,
       "longitude": 73.8208,
-      "status": "PREPARING",
+      "status": "STANDBY",
       "traffic_density": "CRITICAL (Bumper to Bumper)",
       "large_board_id": "BOARD-L-02",
-      "small_board_id": "BOARD-S-02"
+      "small_board_id": "BOARD-S-02",
+      "updated_at": "2026-10-03T08:20:45.409Z"
     },
     {
       "id": "NODE-03",
@@ -549,7 +582,7 @@
       "board_name": "Gantry Board 01 (Large)",
       "intersection_name": "Karve Road / Kothrud Stand",
       "type": "LARGE_INTERSECTION",
-      "status": "EMERGENCY_OVERRIDE",
+      "status": "STANDBY",
       "lane_allocation": "LANE 1 (RIGHT CORRIDOR)",
       "latitude": 18.5065,
       "longitude": 73.8118,
@@ -558,7 +591,11 @@
         "line2": "ALL EASTBOUND LANES HALTED FOR AMBULANCE 102",
         "line3": "APPROACH SPEED 65 KM/H",
         "arrow": "STRAIGHT_FAST"
-      }
+      },
+      "message_line1": "🚨 EMERGENCY CORRIDOR",
+      "message_line2": "MAINTAIN REGULAR FLOW",
+      "message_line3": "LANE CLEARING STANDBY",
+      "updated_at": "2026-10-03T08:20:51.699Z"
     },
     {
       "id": "BOARD-S-01",
@@ -566,7 +603,7 @@
       "board_name": "Roadside Matrix 01 (Small)",
       "intersection_name": "Karve Road Mid-Block Marker",
       "type": "SMALL_ROADSIDE",
-      "status": "ACTIVE",
+      "status": "STANDBY",
       "lane_allocation": "MEDIAN POST",
       "latitude": 18.5069,
       "longitude": 73.811,
@@ -574,7 +611,11 @@
         "line1": "MOVE LEFT NOW ➔",
         "line2": "AMBULANCE 20 SEC",
         "arrow": "RIGHT"
-      }
+      },
+      "message_line1": "🚨 EMERGENCY CORRIDOR",
+      "message_line2": "MAINTAIN REGULAR FLOW",
+      "message_line3": "LANE CLEARING STANDBY",
+      "updated_at": "2026-10-03T08:20:51.720Z"
     },
     {
       "id": "BOARD-L-02",
@@ -582,7 +623,7 @@
       "board_name": "Gantry Board 02 (Large)",
       "intersection_name": "Nal Stop Double Flyover Gantry",
       "type": "LARGE_INTERSECTION",
-      "status": "PREPARING",
+      "status": "STANDBY",
       "lane_allocation": "FLYOVER LOWER BAY - LANE 2",
       "latitude": 18.5088,
       "longitude": 73.8208,
@@ -591,7 +632,11 @@
         "line2": "PREPARE TO HOLD EASTBOUND SIGNAL",
         "line3": "ARRIVAL ETA: 1 MIN 45 SEC",
         "arrow": "STRAIGHT"
-      }
+      },
+      "message_line1": "🚨 EMERGENCY CORRIDOR",
+      "message_line2": "MAINTAIN REGULAR FLOW",
+      "message_line3": "LANE CLEARING STANDBY",
+      "updated_at": "2026-10-03T08:20:51.721Z"
     },
     {
       "id": "BOARD-S-02",
@@ -599,7 +644,7 @@
       "board_name": "Roadside Matrix 02 (Small)",
       "intersection_name": "Nal Stop Approach Pillar",
       "type": "SMALL_ROADSIDE",
-      "status": "PREPARING",
+      "status": "STANDBY",
       "lane_allocation": "FLYOVER PILLAR 14",
       "latitude": 18.5082,
       "longitude": 73.8185,
@@ -607,7 +652,11 @@
         "line1": "AMBULANCE INCOMING",
         "line2": "STAY IN LEFT LANE",
         "arrow": "LEFT_STAY"
-      }
+      },
+      "message_line1": "🚨 EMERGENCY CORRIDOR",
+      "message_line2": "MAINTAIN REGULAR FLOW",
+      "message_line3": "LANE CLEARING STANDBY",
+      "updated_at": "2026-10-03T08:20:51.737Z"
     },
     {
       "id": "BOARD-L-03",
@@ -624,7 +673,11 @@
         "line2": "CORRIDORX SMART TRANSIT ACTIVE",
         "line3": "CAUTION: WET ROADWAYS AT NIGHT",
         "arrow": "NONE"
-      }
+      },
+      "message_line1": "🚨 EMERGENCY CORRIDOR",
+      "message_line2": "MAINTAIN REGULAR FLOW",
+      "message_line3": "LANE CLEARING STANDBY",
+      "updated_at": "2026-10-03T08:20:51.751Z"
     },
     {
       "id": "BOARD-S-03",
@@ -640,7 +693,11 @@
         "line1": "MHATRE BRIDGE",
         "line2": "SMOOTH TRAFFIC",
         "arrow": "NONE"
-      }
+      },
+      "message_line1": "🚨 EMERGENCY CORRIDOR",
+      "message_line2": "MAINTAIN REGULAR FLOW",
+      "message_line3": "LANE CLEARING STANDBY",
+      "updated_at": "2026-10-03T08:20:51.764Z"
     }
   ],
   "board_events": [],

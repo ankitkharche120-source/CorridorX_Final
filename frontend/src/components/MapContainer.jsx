@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-import { useEmergency } from '../context/EmergencyContext';
+import { useEmergency, NEUTRAL_INDIA_CENTER, NEUTRAL_INDIA_ZOOM } from '../context/EmergencyContext';
 import { 
   getGoogleMapsApiKey, 
   hasValidGoogleMapsKey, 
@@ -10,7 +10,7 @@ import {
   tacticalDarkMapStyles 
 } from '../services/googleMapsService';
 import { mockEmergencyPathWaypoints } from '../data/mockRouteNodes';
-import { Navigation, Radio, MapPin, Hospital, Layers, AlertCircle, Compass } from 'lucide-react';
+import { Navigation, Radio, MapPin, Hospital, Layers, AlertCircle, Compass, ShieldCheck } from 'lucide-react';
 
 // Leaflet recenter helper
 const LeafletRecenter = ({ center }) => {
@@ -23,12 +23,14 @@ const LeafletRecenter = ({ center }) => {
   return null;
 };
 
-export const MapContainer = ({ height = "100%", interactive = true }) => {
+export const MapContainer = ({ height = "100%", interactive = true, showHospitalMarkers = true }) => {
   const { 
     currentCoords, 
     nodes, 
     selectedAmbulance, 
     selectedHospital, 
+    nearbyHospitals = [],
+    selectHospitalById,
     emergencyRequest,
     isSimulating,
     currentSpeedKmh,
@@ -45,10 +47,14 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
   const hasGKey = hasValidGoogleMapsKey();
   const apiKey = getGoogleMapsApiKey();
 
-  // Active center coordinates (adapts to arbitrary Indian cities)
-  const activeCenter = (operatingMode === 'REAL' && liveLocation.location) 
-    ? liveLocation.location 
-    : (currentCoords || emergencyRequest?.pickupCoords || { lat: 18.5175, lng: 73.8401 });
+  // Active center coordinates (Priority: selected pickup -> live GPS -> neutral India)
+  const activeCenter = emergencyRequest?.pickupCoords
+    ? emergencyRequest.pickupCoords
+    : ((operatingMode === 'REAL' && liveLocation.location) 
+        ? liveLocation.location 
+        : (currentCoords || NEUTRAL_INDIA_CENTER));
+
+  const defaultZoom = emergencyRequest?.pickupCoords ? 14 : (liveLocation.location ? 14 : NEUTRAL_INDIA_ZOOM);
 
   // -------------------------------------------------------------
   // Leaflet Custom Icons
@@ -389,6 +395,54 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
               </Marker>
             )}
 
+            {/* All Nearby Hospital Markers */}
+            {showHospitalMarkers && nearbyHospitals.map((hosp) => {
+              const isSelected = selectedHospital?.id === hosp.id;
+              if (isSelected) return null; // Rendered as selected destination below
+              const hLat = hosp.latitude || hosp.location?.lat;
+              const hLng = hosp.longitude || hosp.location?.lng;
+              if (!hLat || !hLng) return null;
+
+              const hospitalPinIcon = L.divIcon({
+                className: `hosp-marker-${hosp.id}`,
+                html: `
+                  <div style="display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -100%); cursor: pointer;">
+                    <div style="width: 26px; height: 26px; border-radius: 8px; background: #065f46; border: 2px solid #34d399; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.6);">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 6v12M6 12h12"/>
+                      </svg>
+                    </div>
+                    <div style="margin-top: 2px; background: #064e3b; color: #a7f3d0; border: 1px solid #059669; padding: 1px 4px; border-radius: 4px; font-size: 8.5px; font-weight: 700; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">
+                      ${hosp.name.split(',')[0]}
+                    </div>
+                  </div>
+                `,
+                iconSize: [26, 36],
+                iconAnchor: [13, 36]
+              });
+
+              return (
+                <Marker key={hosp.id} position={[hLat, hLng]} icon={hospitalPinIcon}>
+                  <Popup>
+                    <div className="p-1 max-w-[220px]">
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase">
+                        <span>Nearby Hospital</span>
+                        {hosp.distanceKm && <span>• {hosp.distanceKm} km</span>}
+                      </div>
+                      <h4 className="text-xs font-bold text-white mt-1">{hosp.name}</h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5">{hosp.address}</p>
+                      <button
+                        onClick={() => selectHospitalById && selectHospitalById(hosp.id)}
+                        className="mt-2 w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] shadow transition-colors"
+                      >
+                        SELECT THIS HOSPITAL
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
             {/* Hospital Destination Marker */}
             {hospitalPoint && (
               <Marker 
@@ -447,25 +501,63 @@ export const MapContainer = ({ height = "100%", interactive = true }) => {
         )}
 
         {/* Floating Signal Status Key */}
-        <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2.5 rounded-2xl shadow-xl text-xs space-y-1.5 pointer-events-auto">
+        <div className="absolute top-4 right-4 z-[400] bg-slate-900/90 backdrop-blur-md border border-slate-700/80 p-2.5 rounded-2xl shadow-xl text-xs space-y-1.5 pointer-events-auto hidden sm:block">
           <div className="font-bold text-[10px] text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between gap-2">
             <span>Corridor Signals</span>
             <span className="font-mono text-emerald-400">V2X SYNC</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-            <span className="text-slate-200 font-medium">Junction Active (Preempted Green)</span>
+            <span className="text-slate-200 font-medium text-[11px]">Junction Active (Preempted Green)</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            <span className="text-slate-200 font-medium">Junction Preparing (Warning Lights)</span>
+            <span className="text-slate-200 font-medium text-[11px]">Junction Preparing (Warning Lights)</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <span className="text-slate-200 font-medium">Junction Passed (Normal Cycle)</span>
+            <span className="text-slate-200 font-medium text-[11px]">Junction Passed (Normal Cycle)</span>
           </div>
         </div>
 
+      </div>
+
+      {/* Section 25: Mandatory Data Source Status Bar */}
+      <div className="bg-slate-950 px-4 py-2 border-t border-slate-800 text-[10px] font-mono flex flex-wrap items-center justify-between gap-2 text-slate-400">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="flex items-center gap-1 text-slate-300 font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            MAP: <strong className="text-white">{mapEngine === 'google' ? 'GOOGLE MAPS' : 'LEAFLET/OSM'}</strong>
+          </span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <span className={`w-1.5 h-1.5 rounded-full ${liveLocation.location ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+            GPS: <strong className={liveLocation.location ? 'text-emerald-400' : 'text-amber-400'}>{liveLocation.location ? 'LIVE (±' + Math.round(liveLocation.accuracy || 10) + 'm)' : 'STANDBY'}</strong>
+          </span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            HOSPITALS: <strong className="text-emerald-400">LIVE DATA ({nearbyHospitals.length})</strong>
+          </span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            ROUTE: <strong className="text-emerald-400">{calculatedRoute ? 'LIVE ROAD ROUTE' : 'LIVE COMPUTE'}</strong>
+          </span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            AMBULANCE: <strong className="text-amber-400">DEMO FLEET</strong>
+          </span>
+          <span>•</span>
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            CORRIDOR: <strong className="text-amber-400">SIMULATION ENGINE</strong>
+          </span>
+        </div>
+        <div className="text-slate-500 hidden md:block">
+          CORRIDORX NATIONAL EMS
+        </div>
       </div>
 
     </div>
