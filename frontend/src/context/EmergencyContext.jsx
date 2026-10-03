@@ -246,33 +246,41 @@ export const EmergencyProvider = ({ children }) => {
   const etaMinutes = tripStage === 'PICKUP_STAGE' ? etaToPickup : etaToHospital;
   const etaSeconds = etaMinutes * 60;
 
+  // Single Source of Truth Pickup Location representation
+  const pickupLocation = {
+    lat: pickup.lat,
+    lng: pickup.lng,
+    address: pickup.address || pickup.name,
+    name: pickup.name || pickup.address,
+    shortTitle: pickup.shortTitle || (pickup.address || pickup.name).split(',')[0],
+    source: pickup.source
+  };
+
   // Current moving ambulance position
   const currentCoords = (() => {
     if (tripStage === 'PICKUP_STAGE') {
-      if (isArrivedAtPickup) {
-        return { lat: pickup.lat, lng: pickup.lng };
+      if (isArrivedAtPickup || simulationIndex >= pickupWaypoints.length - 1) {
+        return { lat: pickupLocation.lat, lng: pickupLocation.lng };
       }
       return pickupWaypoints[simulationIndex] || { lat: selectedAmbulance.lat, lng: selectedAmbulance.lng };
     } else {
-      if (isArrivedAtHospital) {
-        const hospLat = selectedHospital.latitude || selectedHospital.lat || 18.5020;
-        const hospLng = selectedHospital.longitude || selectedHospital.lng || 73.8290;
+      const hospLat = selectedHospital.latitude || selectedHospital.lat || 18.5020;
+      const hospLng = selectedHospital.longitude || selectedHospital.lng || 73.8290;
+      if (isArrivedAtHospital || simulationIndex >= hospitalWaypoints.length - 1) {
         return { lat: hospLat, lng: hospLng };
       }
-      return hospitalWaypoints[simulationIndex] || { lat: pickup.lat, lng: pickup.lng };
+      return hospitalWaypoints[simulationIndex] || { lat: pickupLocation.lat, lng: pickupLocation.lng };
     }
   })();
 
-  // Active Map Center
-  const activeCenter = pickup?.lat && pickup?.lng
-    ? { lat: pickup.lat, lng: pickup.lng }
-    : { lat: DEMO_CONFIG.pickup.lat, lng: DEMO_CONFIG.pickup.lng };
+  // Active Map Center: Centered directly on single source of truth pickup
+  const activeCenter = { lat: pickupLocation.lat, lng: pickupLocation.lng };
 
   // -------------------------------------------------------------
-  // ROUTE CALCULATIONS FOR BOTH STAGES
+  // ROUTE CALCULATIONS FOR BOTH STAGES (STRICT ZERO-DRIFT ENDPOINTS)
   // -------------------------------------------------------------
   
-  // Calculate Route 1: Ambulance -> Pickup
+  // Calculate Route 1: Ambulance -> Pickup (destination = activeTrip.pickupLocation)
   const calculateRouteToPickup = async (amb, pickupLoc) => {
     if (!amb || !pickupLoc) return;
     const origin = { latitude: amb.lat, longitude: amb.lng };
@@ -291,6 +299,9 @@ export const EmergencyProvider = ({ children }) => {
             lat: p.latitude || p.lat,
             lng: p.longitude || p.lng
           }));
+          // CRITICAL: Guarantee route endpoints match ambulance at start and EXACT pickupLocation at end
+          mapped[0] = { lat: amb.lat, lng: amb.lng };
+          mapped[mapped.length - 1] = { lat: pickupLoc.lat, lng: pickupLoc.lng };
           setPickupWaypoints(mapped);
           if (tripStage === 'PICKUP_STAGE') {
             setActiveWaypoints(mapped);
@@ -302,8 +313,10 @@ export const EmergencyProvider = ({ children }) => {
       console.warn('[EmergencyContext] Pickup route API fallback:', err);
     }
 
-    // High fidelity fallback path
+    // High fidelity fallback path (endpoints strictly guaranteed)
     const fallbackPath = generateInterpolatedWaypoints(amb, pickupLoc, 22);
+    fallbackPath[0] = { lat: amb.lat, lng: amb.lng };
+    fallbackPath[fallbackPath.length - 1] = { lat: pickupLoc.lat, lng: pickupLoc.lng };
     setPickupWaypoints(fallbackPath);
     setDistanceToPickupTotal(amb.distanceKm || 1.2);
     setEtaToPickupTotal(amb.etaMinutes || 4);
@@ -312,7 +325,7 @@ export const EmergencyProvider = ({ children }) => {
     }
   };
 
-  // Calculate Route 2: Pickup -> Hospital
+  // Calculate Route 2: Pickup -> Hospital (origin = activeTrip.pickupLocation)
   const calculateRouteToHospital = async (pickupLoc, hosp) => {
     if (!pickupLoc?.lat || !pickupLoc?.lng || !hosp) return;
     const hospLat = hosp.latitude || hosp.lat || 18.5020;
@@ -335,6 +348,9 @@ export const EmergencyProvider = ({ children }) => {
             lat: p.latitude || p.lat,
             lng: p.longitude || p.lng
           }));
+          // CRITICAL: Guarantee origin is exact pickupLocation and destination is exact hospital coordinates
+          mappedWaypoints[0] = { lat: pickupLoc.lat, lng: pickupLoc.lng };
+          mappedWaypoints[mappedWaypoints.length - 1] = { lat: hospLat, lng: hospLng };
           setHospitalWaypoints(mappedWaypoints);
           const dynNodes = corridorService.generateCorridorNodesFromRoute(mappedWaypoints, hosp.name);
           setNodes(dynNodes);
@@ -353,6 +369,8 @@ export const EmergencyProvider = ({ children }) => {
       { lat: hospLat, lng: hospLng },
       25
     );
+    fallbackHospPath[0] = { lat: pickupLoc.lat, lng: pickupLoc.lng };
+    fallbackHospPath[fallbackHospPath.length - 1] = { lat: hospLat, lng: hospLng };
     setHospitalWaypoints(fallbackHospPath);
     setDistanceToHospitalTotal(hosp.distanceKm || 2.8);
     setEtaToHospitalTotal(hosp.etaMinutes || 6);
@@ -364,12 +382,12 @@ export const EmergencyProvider = ({ children }) => {
   };
 
   // -------------------------------------------------------------
-  // SET LOCATION HANDLER (Search or GPS)
+  // SET LOCATION HANDLER (Search or GPS) - SINGLE SOURCE OF TRUTH
   // -------------------------------------------------------------
   const setCustomLocation = async (loc) => {
     if (!loc) return;
-    const lat = loc.lat ?? loc.latitude ?? DEMO_CONFIG.pickup.lat;
-    const lng = loc.lng ?? loc.longitude ?? DEMO_CONFIG.pickup.lng;
+    const lat = +(loc.lat ?? loc.latitude ?? DEMO_CONFIG.pickup.lat);
+    const lng = +(loc.lng ?? loc.longitude ?? DEMO_CONFIG.pickup.lng);
     const address = loc.formattedAddress || loc.address || loc.name || DEMO_CONFIG.pickup.name;
     const shortTitle = loc.shortTitle || loc.name || address.split(',')[0];
 
@@ -383,12 +401,21 @@ export const EmergencyProvider = ({ children }) => {
     };
     setPickup(newPickup);
 
-    // 1. Generate 3 relative demo ambulances around this new pickup location
+    // Stop existing simulation and reset state to Stage 1 Standby
+    setIsSimulating(false);
+    clearInterval(simulationTimerRef.current);
+    setSimulationIndex(0);
+    setCurrentSpeedKmh(0);
+    setTripStage('PICKUP_STAGE');
+    setTripStatus('AVAILABLE');
+    setCorridorStatus('STANDBY');
+
+    // 1. Generate 3 relative demo ambulances around this exact new pickup location
     const newAmbulances = generateDemoAmbulances(lat, lng);
     setAvailableAmbulances(newAmbulances);
     setSelectedAmbulance(newAmbulances[0]);
 
-    // 2. Fetch nearby hospitals for this location
+    // 2. Fetch or recalculate nearby hospitals for this location
     let targetHosp = mockHospitals[0];
     try {
       const res = await hospitalService.getNearbyHospitals(lat, lng, 12);
@@ -414,7 +441,7 @@ export const EmergencyProvider = ({ children }) => {
       console.warn('[EmergencyContext] Hospital fetch failed:', err);
     }
 
-    // 3. Compute both routes for the new pickup location
+    // 3. Compute both routes for the new pickup location (exact zero drift)
     await calculateRouteToPickup(newAmbulances[0], newPickup);
     await calculateRouteToHospital(newPickup, targetHosp);
   };
@@ -781,26 +808,48 @@ export const EmergencyProvider = ({ children }) => {
     patientName: userName,
     contactNumber: userPhone,
     emergencyType: 'Chest Pain / Acute Cardiac Emergency',
-    pickupLocation: pickup.name,
-    pickupCoords: { lat: pickup.lat, lng: pickup.lng },
-    shortTitle: pickup.shortTitle,
+    pickupLocation: pickupLocation.address,
+    pickupCoords: { lat: pickupLocation.lat, lng: pickupLocation.lng },
+    shortTitle: pickupLocation.shortTitle,
     notes: 'Urgent emergency dispatch. Priority corridor will activate after patient boarding.'
   };
 
-  // Consolidated activeTrip object
+  // Consolidated activeTrip object - SINGLE SOURCE OF TRUTH
   const activeTrip = {
+    pickupLocation: {
+      lat: pickupLocation.lat,
+      lng: pickupLocation.lng,
+      address: pickupLocation.address,
+      name: pickupLocation.name
+    },
+    pickup: pickupLocation,
+    selectedHospital: {
+      id: selectedHospital?.id,
+      name: selectedHospital?.name,
+      address: selectedHospital?.address,
+      lat: selectedHospital?.latitude || selectedHospital?.lat || 18.5020,
+      lng: selectedHospital?.longitude || selectedHospital?.lng || 73.8290,
+      distanceKm: selectedHospital?.distanceKm,
+      etaMinutes: selectedHospital?.etaMinutes
+    },
+    hospital: selectedHospital,
+    ambulance: {
+      ...selectedAmbulance,
+      currentLocation: currentCoords
+    },
+    phase: tripStatus,
     tripStage,
     tripStatus,
     corridorStatus,
-    pickup,
-    hospital: selectedHospital,
-    ambulance: selectedAmbulance,
     availableAmbulances,
-    // Metrics
-    distanceToPickup,
+    pickupRoute: pickupWaypoints,
+    hospitalRoute: hospitalWaypoints,
+    activeRoute: activeWaypoints,
+    // Stage-specific Metrics
     etaToPickup,
-    distanceToHospital,
+    distanceToPickup,
     etaToHospital,
+    distanceToHospital,
     distanceRemainingKm,
     etaMinutes,
     etaSeconds,
@@ -831,6 +880,7 @@ export const EmergencyProvider = ({ children }) => {
         toggleDriverDuty,
         activeDriver,
         emergencyRequest,
+        pickupLocation,
         pickup,
         setCustomLocation,
         liveLocation,

@@ -50,14 +50,13 @@ export const CustomerDashboard = () => {
   const [searchFeedback, setSearchFeedback] = useState('');
   const [isSearchingGps, setIsSearchingGps] = useState(false);
 
-  // Handle location search: Simple, robust, never breaks
-  const handleSearch = (e) => {
+  // Handle location search: Simple, robust, supports all Indian locations
+  const handleSearch = async (e) => {
     if (e) e.preventDefault();
-    const query = searchInput.trim().toLowerCase();
-    
+    const query = searchInput.trim();
     if (!query) return;
 
-    // Supported key cities & Pune areas for the demo
+    // 1. Instant lookup for common demo locations
     const demoLocations = [
       { key: 'karvenagar', name: 'Karvenagar, Pune', lat: 18.5074, lng: 73.8065 },
       { key: 'kothrud', name: 'Kothrud Stand, Paud Road, Pune', lat: 18.5015, lng: 73.8040 },
@@ -65,17 +64,27 @@ export const CustomerDashboard = () => {
       { key: 'shivajinagar', name: 'Shivajinagar, Pune', lat: 18.5314, lng: 73.8446 },
       { key: 'deccan', name: 'Deccan Gymkhana, Pune', lat: 18.5175, lng: 73.8401 },
       { key: 'hinjewadi', name: 'Hinjewadi Phase 1, Pune', lat: 18.5913, lng: 73.7389 },
+      { key: 'swargate', name: 'Swargate, Pune', lat: 18.5018, lng: 73.8586 },
+      { key: 'aundh', name: 'Aundh, Pune', lat: 18.5580, lng: 73.8075 },
+      { key: 'viman nagar', name: 'Viman Nagar, Pune', lat: 18.5679, lng: 73.9143 },
+      { key: 'hadapsar', name: 'Hadapsar, Pune', lat: 18.5089, lng: 73.9260 },
+      { key: 'baner', name: 'Baner, Pune', lat: 18.5590, lng: 73.7868 },
+      { key: 'camp', name: 'MG Road, Camp, Pune', lat: 18.5167, lng: 73.8797 },
       { key: 'mumbai', name: 'Bandra, Mumbai', lat: 19.0544, lng: 72.8402 },
       { key: 'delhi', name: 'Connaught Place, New Delhi', lat: 28.6315, lng: 77.2167 },
       { key: 'bengaluru', name: 'Indiranagar, Bengaluru', lat: 12.9784, lng: 77.6408 },
       { key: 'bangalore', name: 'Indiranagar, Bengaluru', lat: 12.9784, lng: 77.6408 },
+      { key: 'chennai', name: 'T Nagar, Chennai', lat: 13.0418, lng: 80.2341 },
+      { key: 'hyderabad', name: 'Hitec City, Hyderabad', lat: 17.4435, lng: 78.3772 },
+      { key: 'kolkata', name: 'Park Street, Kolkata', lat: 22.5516, lng: 88.3524 },
       { key: 'pune', name: 'Karvenagar, Pune', lat: 18.5074, lng: 73.8065 }
     ];
 
-    const match = demoLocations.find(loc => query.includes(loc.key));
+    const qLower = query.toLowerCase();
+    const match = demoLocations.find(loc => qLower.includes(loc.key));
 
     if (match) {
-      setCustomLocation({
+      await setCustomLocation({
         lat: match.lat,
         lng: match.lng,
         name: match.name,
@@ -83,27 +92,75 @@ export const CustomerDashboard = () => {
         shortTitle: match.name.split(',')[0],
         source: 'SEARCH'
       });
-      setSearchFeedback(`Location set to ${match.name}`);
-    } else {
-      setSearchFeedback('Location search unavailable in demo mode');
+      setSearchFeedback(`Pickup location set to ${match.name}`);
+      return;
     }
+
+    // 2. Real-time geocoding / places search fallback
+    try {
+      setSearchFeedback(`Searching "${query}"...`);
+      const suggestions = await locationService.searchPlaces(query);
+      if (suggestions && suggestions.length > 0) {
+        const first = suggestions[0];
+        let lat = first.latitude || first.lat;
+        let lng = first.longitude || first.lng;
+        let placeName = first.name || first.description || query;
+
+        if ((!lat || !lng) && first.place_id) {
+          try {
+            const details = await locationService.getPlaceDetails(first.place_id);
+            if (details) {
+              lat = details.latitude || details.lat;
+              lng = details.longitude || details.lng;
+              placeName = details.formattedAddress || placeName;
+            }
+          } catch (_) {}
+        }
+
+        if (lat && lng) {
+          await setCustomLocation({
+            lat: +lat,
+            lng: +lng,
+            name: placeName,
+            formattedAddress: placeName,
+            shortTitle: placeName.split(',')[0],
+            source: 'GEOCODING_SEARCH'
+          });
+          setSearchFeedback(`Pickup location set to ${placeName}`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Geocoding search failed:', err);
+    }
+
+    setSearchFeedback(`Location "${query}" not found. Try e.g. Karvenagar, Kothrud, Deccan, Shivajinagar`);
   };
 
-  // Handle GPS location
+  // Handle GPS location: sets YOUR LOCATION = PICKUP POINT exactly
   const handleUseGps = async () => {
     setIsSearchingGps(true);
     try {
       const pos = await locationService.getCurrentBrowserPosition();
+      let addr = `Device GPS Location (${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)})`;
+      try {
+        const rev = await locationService.reverseGeocode(pos.latitude, pos.longitude);
+        if (rev && rev.formattedAddress) {
+          addr = rev.formattedAddress;
+        }
+      } catch (_) {}
+
       await setCustomLocation({
         lat: pos.latitude,
         lng: pos.longitude,
-        name: `Current Location (${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)})`,
-        formattedAddress: `Live Location`,
+        name: addr,
+        formattedAddress: addr,
+        shortTitle: addr.split(',')[0],
         source: 'BROWSER_GPS'
       });
-      setSearchFeedback('Location updated using device GPS');
+      setSearchFeedback(`Pickup location updated to device GPS: ${addr}`);
     } catch (err) {
-      setSearchFeedback('LOCATION ACCESS DENIED. Use search instead.');
+      setSearchFeedback('Location access unavailable or denied. Using default Karvenagar location.');
     } finally {
       setIsSearchingGps(false);
     }

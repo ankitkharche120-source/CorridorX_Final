@@ -181,6 +181,15 @@ exports.computeEmergencyRoute = async (req, res) => {
             });
           }
 
+          // Ensure endpoints match origin and destination exactly
+          if (sampledPoints.length > 0) {
+            sampledPoints[0] = { latitude: +origin.latitude, longitude: +origin.longitude };
+            sampledPoints[sampledPoints.length - 1] = { latitude: +destination.latitude, longitude: +destination.longitude };
+          } else {
+            sampledPoints.push({ latitude: +origin.latitude, longitude: +origin.longitude });
+            sampledPoints.push({ latitude: +destination.latitude, longitude: +destination.longitude });
+          }
+
           const osrmRoute = {
             id: 'ROUTE-LIVE-ROAD',
             isPrimary: true,
@@ -214,18 +223,21 @@ exports.computeEmergencyRoute = async (req, res) => {
     const durationSeconds = Math.max(30, Math.round(distanceMeters / 13.3));
 
     // Generate realistic interpolated waypoints for polyline rendering
-    const pointsCount = 6;
+    const pointsCount = 12;
     const pathPoints = [];
     for (let i = 0; i <= pointsCount; i++) {
       const fraction = i / pointsCount;
-      // Slight urban curvature
+      // Sinusoidal lateral curve (0 at start and end)
       const jitterLat = Math.sin(fraction * Math.PI) * 0.0012;
-      const jitterLng = Math.cos(fraction * Math.PI) * 0.0008;
+      const jitterLng = Math.sin(fraction * Math.PI) * 0.0008;
       pathPoints.push({
         latitude: +(origin.latitude + (destination.latitude - origin.latitude) * fraction + jitterLat).toFixed(6),
         longitude: +(origin.longitude + (destination.longitude - origin.longitude) * fraction + jitterLng).toFixed(6)
       });
     }
+    // Strictly guarantee exact origin and destination coordinates
+    pathPoints[0] = { latitude: +origin.latitude, longitude: +origin.longitude };
+    pathPoints[pathPoints.length - 1] = { latitude: +destination.latitude, longitude: +destination.longitude };
 
     const primaryRoute = {
       id: 'ROUTE-PRIMARY',

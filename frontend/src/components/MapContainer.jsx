@@ -26,6 +26,7 @@ const LeafletRecenter = ({ center }) => {
 
 export const MapContainer = ({ height = "100%", interactive = true, showHospitalMarkers = true }) => {
   const { 
+    activeTrip,
     currentCoords, 
     nodes, 
     selectedAmbulance, 
@@ -44,16 +45,19 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
     toggleOperatingMode,
     mapEngine,
     setMapEngine,
-    liveLocation,
-    activeWaypoints,
-    calculatedRoute
+    activeWaypoints
   } = useEmergency();
 
   const hasGKey = hasValidGoogleMapsKey();
   const apiKey = getGoogleMapsApiKey();
 
-  // Active center coordinates (Pune Karvenagar demo)
-  const activeCenter = emergencyRequest?.pickupCoords || { lat: DEMO_CONFIG.pickup.lat, lng: DEMO_CONFIG.pickup.lng };
+  // SINGLE SOURCE OF TRUTH: activeTrip.pickupLocation
+  const pickupLocation = activeTrip?.pickupLocation || { 
+    lat: DEMO_CONFIG.pickup.lat, 
+    lng: DEMO_CONFIG.pickup.lng, 
+    address: DEMO_CONFIG.pickup.name 
+  };
+  const activeCenter = { lat: pickupLocation.lat, lng: pickupLocation.lng };
   const defaultZoom = 14;
 
   // -------------------------------------------------------------
@@ -100,23 +104,6 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
     `,
     iconSize: [30, 30],
     iconAnchor: [15, 15]
-  });
-
-  const realGpsUserIcon = L.divIcon({
-    className: 'custom-real-gps-marker',
-    html: `
-      <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -50%);">
-        <div style="position: absolute; width: 40px; height: 40px; border-radius: 9999px; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-        <div style="position: relative; width: 28px; height: 28px; border-radius: 9999px; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 12px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; color: white;">
-          <div style="width: 10px; height: 10px; border-radius: 9999px; background: white;"></div>
-        </div>
-        <div style="margin-top: 4px; background: #0f172a; color: #60a5fa; border: 1px solid #3b82f6; padding: 2px 6px; border-radius: 6px; font-size: 9.5px; font-weight: 800; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.6);">
-          YOUR REAL GPS (±${Math.round(liveLocation.accuracy || 10)}m)
-        </div>
-      </div>
-    `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
   });
 
   const pickupIcon = L.divIcon({
@@ -197,15 +184,16 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
   };
 
   // Dynamic route waypoints adapting to any Indian city
-  const waypoints = (activeWaypoints && activeWaypoints.length > 0) ? activeWaypoints : mockEmergencyPathWaypoints;
+  const waypoints = (activeWaypoints && activeWaypoints.length > 0) ? activeWaypoints : [];
   const fullPathCoords = waypoints.map(p => [p.lat, p.lng]);
   const completedCoords = fullPathCoords.slice(0, Math.min(simulationIndex + 1, fullPathCoords.length));
   const remainingCoords = fullPathCoords.slice(simulationIndex);
 
-  const pickupPoint = emergencyRequest?.pickupCoords || waypoints[0];
-  const hospitalPoint = (selectedHospital?.latitude && selectedHospital?.longitude)
-    ? { lat: selectedHospital.latitude, lng: selectedHospital.longitude }
-    : waypoints[waypoints.length - 1];
+  // Single source of truth hospital destination point
+  const hospitalPoint = {
+    lat: selectedHospital?.latitude || selectedHospital?.lat || 18.5020,
+    lng: selectedHospital?.longitude || selectedHospital?.lng || 73.8290
+  };
 
   return (
     <div style={{ height }} className="w-full relative overflow-hidden rounded-3xl border border-slate-800 shadow-2xl bg-slate-950 flex flex-col">
@@ -238,21 +226,6 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
               internalUsageAttributionIds={[GMP_ATTRIBUTION_ID]}
               disableDefaultUI={!interactive}
             >
-              {/* Real Customer GPS Advanced Marker */}
-              {liveLocation.location && (
-                <AdvancedMarker position={liveLocation.location} title="Your Live Location">
-                  <div className="relative flex flex-col items-center">
-                    <div className="absolute w-10 h-10 rounded-full bg-blue-500/40 animate-ping"></div>
-                    <div className="w-7 h-7 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center">
-                      <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                    </div>
-                    <span className="mt-1 px-1.5 py-0.5 rounded bg-slate-900 text-blue-400 border border-blue-500 text-[9px] font-bold font-mono">
-                      YOU (±{Math.round(liveLocation.accuracy || 10)}m)
-                    </span>
-                  </div>
-                </AdvancedMarker>
-              )}
-
               {/* Moving Ambulance Advanced Marker */}
               <AdvancedMarker position={currentCoords} title={selectedAmbulance?.name}>
                 <div className="relative flex flex-col items-center">
@@ -266,26 +239,22 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
                 </div>
               </AdvancedMarker>
 
-              {/* Pickup Advanced Marker */}
-              {pickupPoint && (
-                <AdvancedMarker position={pickupPoint} title="Emergency Pickup Location">
-                  <Pin background="#2563eb" borderColor="#ffffff" glyphColor="#ffffff" scale={1.1}>
-                    <MapPin className="w-4 h-4 text-white" />
-                  </Pin>
-                </AdvancedMarker>
-              )}
+              {/* Pickup Advanced Marker: SINGLE SOURCE OF TRUTH */}
+              <AdvancedMarker position={{ lat: pickupLocation.lat, lng: pickupLocation.lng }} title="Emergency Pickup Location">
+                <Pin background="#2563eb" borderColor="#ffffff" glyphColor="#ffffff" scale={1.1}>
+                  <MapPin className="w-4 h-4 text-white" />
+                </Pin>
+              </AdvancedMarker>
 
               {/* Hospital Advanced Marker */}
-              {hospitalPoint && (
-                <AdvancedMarker 
-                  position={hospitalPoint}
-                  title={selectedHospital?.name || 'Emergency Trauma Center'}
-                >
-                  <Pin background="#059669" borderColor="#ffffff" glyphColor="#ffffff" scale={1.2}>
-                    <Hospital className="w-4 h-4 text-white" />
-                  </Pin>
-                </AdvancedMarker>
-              )}
+              <AdvancedMarker 
+                position={hospitalPoint}
+                title={selectedHospital?.name || 'Emergency Trauma Center'}
+              >
+                <Pin background="#059669" borderColor="#ffffff" glyphColor="#ffffff" scale={1.2}>
+                  <Hospital className="w-4 h-4 text-white" />
+                </Pin>
+              </AdvancedMarker>
 
               {/* Corridor Signal Nodes: Only active during hospital emergency journey */}
               {tripStage === 'HOSPITAL_STAGE' && nodes.map(node => (
@@ -345,35 +314,18 @@ export const MapContainer = ({ height = "100%", interactive = true, showHospital
               />
             )}
 
-            {/* Real Customer GPS Marker */}
-            {liveLocation.location && (
-              <Marker position={[liveLocation.location.lat, liveLocation.location.lng]} icon={realGpsUserIcon}>
-                <Popup>
-                  <div className="p-1">
-                    <p className="text-xs font-bold text-blue-400">YOUR REAL DEVICE LOCATION</p>
-                    <p className="text-[11px] text-slate-300 font-mono mt-0.5">
-                      Lat: {liveLocation.location.lat.toFixed(5)}, Lng: {liveLocation.location.lng.toFixed(5)}
-                    </p>
-                    <p className="text-[10px] text-slate-400">Accuracy: ±{Math.round(liveLocation.accuracy || 10)} meters</p>
-                  </div>
-                </Popup>
-              </Marker>
-            )}
-
-            {/* Pickup Marker */}
-            {pickupPoint && (
-              <Marker position={[pickupPoint.lat, pickupPoint.lng]} icon={pickupIcon}>
-                <Popup>
-                  <div className="p-1">
-                    <p className="text-xs font-bold text-blue-400">PATIENT PICKUP</p>
-                    <p className="text-xs text-slate-200 mt-1">{emergencyRequest?.pickupLocation}</p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                      {pickupPoint.lat.toFixed(5)}, {pickupPoint.lng.toFixed(5)}
-                    </p>
-                  </div>
-                </Popup>
-              </Marker>
-            )}
+            {/* Pickup Marker: SINGLE SOURCE OF TRUTH */}
+            <Marker position={[pickupLocation.lat, pickupLocation.lng]} icon={pickupIcon}>
+              <Popup>
+                <div className="p-1">
+                  <p className="text-xs font-bold text-blue-400">PATIENT PICKUP POINT</p>
+                  <p className="text-xs text-slate-200 mt-1">{pickupLocation.address || pickupLocation.name}</p>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    {pickupLocation.lat.toFixed(5)}, {pickupLocation.lng.toFixed(5)}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
 
             {/* All Nearby Hospital Markers */}
             {showHospitalMarkers && nearbyHospitals.map((hosp) => {
