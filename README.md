@@ -99,3 +99,7 @@ npm run dev
 3. Switch to **Ambulance Driver** or open [http://localhost:5173/ambulance](http://localhost:5173/ambulance) to inspect the pilot's tactical CAD cockpit.
 4. Open [http://localhost:5173/hospital](http://localhost:5173/hospital) to observe incoming casualties and toggle trauma readiness.
 5. Scan an ambulance QR decal via [http://localhost:5173/qr-emergency/AMB-102](http://localhost:5173/qr-emergency/AMB-102).
+
+
+## CorriodrX 
+U can access corriodrX: corridor-x-final.vercel.app
